@@ -6,8 +6,6 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger(this.getClass)
 
-case class SyntaxError(line: Int, where: String, message: String) extends Error
-
 enum TokenType:
     // Single-character tokens
     case LeftParen, RightParen, LeftBrace, RightBrace,
@@ -40,7 +38,7 @@ class Scanner(val source: String):
 
     private def isAtEnd = current >= source.length
 
-    def scanTokens(): List[Token] | SyntaxError =
+    def scanTokens(): List[Token] =
         while !isAtEnd do
             start = current
             scanToken()

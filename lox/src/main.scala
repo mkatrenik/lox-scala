@@ -1,6 +1,7 @@
 package lox
 
 import org.slf4j.LoggerFactory
+import scala.util.{Failure, Success, Try}
 
 private val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -8,10 +9,12 @@ def report(line: Int, where: String, message: String) =
     logger.error(s"[line $line] Error: $where: $message")
 
 @main def run =
-    val scanner = Scanner("print \"Hello, world!\"")
+    val scanner = Scanner("1 + 1")
     val tokens = scanner.scanTokens()
-    tokens match
-        case e: SyntaxError =>
-            report(e.line, e.where, e.message)
-            System.exit(64)
-        case tokens: List[Token] => logger.info("\n" + tokens.mkString("\n"))
+    logger.info("\n" + tokens.mkString("\n"))
+
+    Parser(tokens).parse() match
+        case Success(expressions) =>
+            logger.info("Parsed expressions: " + expressions.mkString(", "))
+        case Failure(exception) =>
+            logger.error("Parsing failed: " + exception.getMessage)
