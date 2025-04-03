@@ -1,6 +1,9 @@
 package lox
 
 class AstPrinter extends Visitor[String]:
+    def print(exprs: List[Expr]): String =
+        exprs.map(print).mkString(", ")
+
     def print(expr: Expr): String = expr.accept(this)
 
     def visitAssignExpr(expr: Expr.Assign): String =
