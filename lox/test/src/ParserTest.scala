@@ -7,14 +7,33 @@ class ParserTest extends munit.FunSuite:
         """.stripMargin
         val scanner = Scanner(source)
         val tokens = scanner.scanTokens()
-        print(tokens)
-        tokens match
-            case i: List[?] =>
-                Parser(i).parse() match
-                    case scala.util.Success(_) =>
-                        fail("Expected a parsing error")
-                    case scala.util.Failure(exception) =>
-                        assertEquals(exception.getMessage, "Expect expression.")
-            case _ =>
-                fail("Expected a list of tokens")
+
+        Parser(tokens)
+            .parse()
+            .fold(
+                e => assertEquals(e.getMessage, "Expect expression."),
+                _ => fail("Expected a parsing error")
+            )
+
+    }
+
+    test("test boolean") {
+        val source = """
+        |true
+        """.stripMargin
+        val scanner = Scanner(source)
+        val tokens = scanner.scanTokens()
+        Parser(tokens)
+            .parse()
+            .fold(
+                _ => fail("Unexpected parsing error"),
+                exps =>
+                    assertEquals(
+                        exps,
+                        List(
+                            Expr.Literal(true)
+                        )
+                    )
+            )
+
     }

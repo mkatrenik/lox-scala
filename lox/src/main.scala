@@ -8,14 +8,21 @@ private val logger = LoggerFactory.getLogger(this.getClass)
 def report(line: Int, where: String, message: String) =
     logger.error(s"[line $line] Error: $where: $message")
 
+def stringify(value: Any): String =
+    value match
+        case null      => "nil"
+        case v: Double => v.toString
+        case _         => value.toString
+
 class Lox:
-    private val astPrinter = AstPrinter()
+    // private val astPrinter = AstPrinter()
+    private val interpreter = Interpreter()
 
     def runPrompt(): Unit =
         while true do
             print("> ")
             val input = scala.io.StdIn.readLine()
-            if input == null then return
+            if input.isEmpty then return
             run(input)
 
     def runFile(fileName: String): Unit =
@@ -28,9 +35,12 @@ class Lox:
 
         Parser(tokens).parse() match
             case Success(expressions) =>
-                println(
-                    astPrinter.print(expressions)
-                )
+                // astPrinter.toString(expressions)
+
+                for expr <- expressions do
+                    val value = interpreter.evaluate(expr)
+                    println(stringify(value))
+
             case Failure(exception) =>
                 logger.error("Parsing failed: " + exception.getMessage)
 
