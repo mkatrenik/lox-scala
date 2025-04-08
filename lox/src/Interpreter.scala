@@ -1,9 +1,13 @@
 package lox
 
 import lox.Expr.*
+import scala.util.Try
 
 class Interpreter extends Visitor[Any]:
+    def interpret(expr: Expr): Try[Any] = Try(evaluate(expr))
+
     def evaluate(expr: Expr): Any = expr.accept(this)
+
     def runtimeError(token: Token, message: String): Nothing =
         throw RuntimeError(token, message)
 
@@ -42,8 +46,10 @@ class Interpreter extends Visitor[Any]:
                     case _                      => errorNumbers
             case TokenType.Slash =>
                 (left, right) match
-                    case (l: Double, r: Double) => l / r
-                    case _                      => errorNumbers
+                    case (l: Double, r: Double) =>
+                        if r == 0 then runtimeError(expr.operator, "Division by zero.")
+                        l / r
+                    case _ => errorNumbers
             case TokenType.Greater =>
                 (left, right) match
                     case (l: Double, r: Double) => l > r

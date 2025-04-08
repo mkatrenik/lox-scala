@@ -30,8 +30,13 @@ class Lox:
             .parse()
             .map: expressions =>
                 for expr <- expressions do
-                    val value = interpreter.evaluate(expr)
-                    println(stringify(value))
+                    interpreter
+                        .interpret(expr)
+                        .map: value =>
+                            println(stringify(value))
+                        .recover:
+                            case err: RuntimeError =>
+                                Lox.error(err)
 
 object Lox:
     var hadError = false
