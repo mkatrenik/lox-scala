@@ -4,11 +4,11 @@ import lox.Expr.*
 
 class Interpreter extends Visitor[Any]:
     def evaluate(expr: Expr): Any = expr.accept(this)
-    def error(message: String): Nothing =
-        throw RuntimeError(message)
+    def runtimeError(token: Token, message: String): Nothing =
+        throw RuntimeError(token, message)
 
-    def errorNumbersOrStrings = error("Operands must be two numbers or two strings.")
-    def errorNumbers = error("Operands must be two numbers.")
+    def errorNumbersOrStrings(token: Token) = runtimeError(token, "Operands must be two numbers or two strings.")
+    def errorNumbers(token: Token) = runtimeError(token, "Operands must be two numbers.")
 
     def visitLiteralExpr(expr: Literal): Any = expr.value.asInstanceOf[Any]
     def visitGroupingExpr(expr: Grouping): Any = evaluate(expr.expression)
@@ -17,7 +17,11 @@ class Interpreter extends Visitor[Any]:
         (expr.operator.tokenType, right) match
             case (TokenType.Minus, right: Double) => -right
             case (TokenType.Bang, right)          => !isTruthy(right)
-            case _ => error(s"Invalid unary operator: ${expr.operator.lexeme} for ${right.getClass.getSimpleName}")
+            case _ =>
+                runtimeError(
+                    expr.operator,
+                    s"Invalid unary operator: ${expr.operator.lexeme} for ${right.getClass.getSimpleName}"
+                )
 
     def visitBinaryExpr(expr: Binary): Any =
         val right = evaluate(expr.right)
@@ -68,7 +72,7 @@ class Interpreter extends Visitor[Any]:
                     case (None, Some(_)) | (Some(_), None) => true
                     case (Some(l), Some(r))                => l != r
                     case _                                 => errorNumbersOrStrings
-            case _ => error("Invalid binary operator: " + expr.operator.lexeme)
+            case _ => runtimeError(expr.operator, "Invalid binary operator: " + expr.operator.lexeme)
 
     def visitAssignExpr(expr: Assign): Any = ???
     def visitVariableExpr(expr: Variable): Any = ???

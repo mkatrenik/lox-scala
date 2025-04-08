@@ -3,8 +3,6 @@ package lox
 import scala.util.boundary, boundary.break
 import scala.util.Try
 
-// private val logger = org.slf4j.LoggerFactory.getLogger(this.getClass)
-
 class Parser(tokens: List[Token]):
 
     private var current = 0
@@ -14,6 +12,9 @@ class Parser(tokens: List[Token]):
         Try:
             while !isAtEnd() do expressions += expression()
             expressions.result()
+
+    def reportError(line: Int, where: String, message: String) =
+        println(s"[line $line] Parsing error: $where: $message")
 
     private def isAtEnd(): Boolean =
         current >= tokens.length || tokens(current).tokenType == TokenType.EOF
@@ -109,9 +110,7 @@ class Parser(tokens: List[Token]):
         else throw error(previous(), message)
 
     private def error(token: Token, message: String): ParseError =
-        if token.tokenType == TokenType.EOF then report(token.line, " at end", message)
-        else report(token.line, s" at '${token.lexeme}'", message)
-
+        Lox.error(token, message)
         val error = ParseError(message)
         error
 

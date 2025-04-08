@@ -2,10 +2,6 @@ package lox
 
 import scala.collection.mutable
 
-import org.slf4j.LoggerFactory
-
-private val logger = LoggerFactory.getLogger(this.getClass)
-
 enum TokenType:
     // Single-character tokens
     case LeftParen, RightParen, LeftBrace, RightBrace,
@@ -84,7 +80,7 @@ class Scanner(val source: String):
                 if c.isDigit then number()
                 else if c.isAlpha then identifier()
                 else
-                    logger.error(s"Unexpected character: $c")
+                    Lox.error(line, s"Unexpected character: $c")
                     ()
 
     private def advance(): Char =
@@ -106,12 +102,12 @@ class Scanner(val source: String):
         source(current + skip)
 
     private def string(): Unit =
-        while peek() != '"' && !isAtEnd do {
+        while peek() != '"' && !isAtEnd do
             if peek() == '\n' then line += 1
             advance()
-        }
+
         if isAtEnd then
-            logger.error(s"Unterminated string at line $line")
+            Lox.error(line, s"Unterminated string")
             return
         // The closing quote.
         advance()

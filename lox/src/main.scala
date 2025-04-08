@@ -1,13 +1,5 @@
 package lox
 
-import org.slf4j.LoggerFactory
-import scala.util.{Failure, Success}
-
-private val logger = LoggerFactory.getLogger(this.getClass)
-
-def report(line: Int, where: String, message: String) =
-    logger.error(s"[line $line] Error: $where: $message")
-
 def stringify(value: Any): String =
     value match
         case null      => "nil"
@@ -28,21 +20,37 @@ class Lox:
     def runFile(fileName: String): Unit =
         val source = scala.io.Source.fromFile(fileName).mkString
         run(source)
+        if Lox.hadError then System.exit(65)
+        if Lox.hadRuntimeError then System.exit(70)
 
-    private def run(input: String) =
-        val scanner = Scanner(input)
-        val tokens = scanner.scanTokens()
+    private def run(input: String): Unit =
+        val tokens = Scanner(input).scanTokens()
 
-        Parser(tokens).parse() match
-            case Success(expressions) =>
-                // astPrinter.toString(expressions)
-
+        Parser(tokens)
+            .parse()
+            .map: expressions =>
                 for expr <- expressions do
                     val value = interpreter.evaluate(expr)
                     println(stringify(value))
 
-            case Failure(exception) =>
-                logger.error("Parsing failed: " + exception.getMessage)
+object Lox:
+    var hadError = false
+    var hadRuntimeError = false
+
+    def error(line: Int, message: String): Unit =
+        Lox.reportError(line, "", message)
+
+    def error(token: Token, message: String): Unit =
+        if token.tokenType == TokenType.EOF then Lox.reportError(token.line, " at end", message)
+        else Lox.reportError(token.line, s" at '${token.lexeme}'", message)
+
+    def error(err: RuntimeError): Unit =
+        hadRuntimeError = true
+        Lox.reportError(err.token.line, "", err.message)
+
+    def reportError(line: Int, where: String, message: String): Unit =
+        hadError = true
+        println(s"[line $line] Error: $where: $message")
 
 @main def run(args: String*) =
     if args.length > 1 then println("Usage: lox [script]")
