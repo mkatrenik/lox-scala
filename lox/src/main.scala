@@ -1,5 +1,7 @@
 package lox
 
+import scala.util.Try
+
 def stringify(value: Any): String =
     value match
         case null      => "nil"
@@ -26,17 +28,16 @@ class Lox:
     private def run(input: String): Unit =
         val tokens = Scanner(input).scanTokens()
 
-        Parser(tokens)
-            .parse()
-            .map: expressions =>
-                for expr <- expressions do
-                    interpreter
-                        .interpret(expr)
-                        .map: value =>
-                            println(stringify(value))
-                        .recover:
-                            case err: RuntimeError =>
-                                Lox.error(err)
+        val ast: Try[List[Stmt]] = Parser(tokens).parse()
+
+        if Lox.hadError then return
+
+        ast.map: statements =>
+            interpreter
+                .interpret(statements)
+                .recover:
+                    case err: RuntimeError =>
+                        Lox.error(err)
 
 object Lox:
     var hadError = false

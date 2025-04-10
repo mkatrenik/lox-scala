@@ -7,11 +7,11 @@ class Parser(tokens: List[Token]):
 
     private var current = 0
 
-    def parse(): Try[List[Expr]] =
-        val expressions = List.newBuilder[Expr]
+    def parse(): Try[List[Stmt]] =
+        val statements = List.newBuilder[Stmt]
         Try:
-            while !isAtEnd() do expressions += expression()
-            expressions.result()
+            while !isAtEnd() do statements += statement()
+            statements.result()
 
     def reportError(line: Int, where: String, message: String) =
         println(s"[line $line] Parsing error: $where: $message")
@@ -19,7 +19,7 @@ class Parser(tokens: List[Token]):
     private def isAtEnd(): Boolean =
         current >= tokens.length || tokens(current).tokenType == TokenType.EOF
 
-    private def matchToken(tokenTypes: TokenType*): Boolean =
+    private def `match`(tokenTypes: TokenType*): Boolean =
         boundary:
             for tokenType <- tokenTypes do
                 if check(tokenType) then
@@ -42,12 +42,26 @@ class Parser(tokens: List[Token]):
         if isAtEnd() then tokens(tokens.length - 1)
         else tokens(current)
 
+    private def statement(): Stmt =
+        if `match`(TokenType.Print) then printStatement()
+        else expressionStatement()
+
+    private def printStatement(): Stmt =
+        val value = expression()
+        consume(TokenType.Semicolon, "Expect ';' after value.")
+        Stmt.Print(value)
+
+    private def expressionStatement(): Stmt =
+        val expr = expression()
+        consume(TokenType.Semicolon, "Expect ';' after expression.")
+        Stmt.Expression(expr)
+
     private def expression(): Expr =
         equality()
 
     private def equality(): Expr =
         var expr = comparison()
-        while matchToken(TokenType.BangEqual, TokenType.EqualEqual) do
+        while `match`(TokenType.BangEqual, TokenType.EqualEqual) do
             val operator = previous()
             val right = comparison()
             expr = Expr.Binary(expr, operator, right)
@@ -55,7 +69,7 @@ class Parser(tokens: List[Token]):
 
     private def comparison(): Expr =
         var expr = term()
-        while matchToken(TokenType.Greater, TokenType.GreaterEqual, TokenType.Less, TokenType.LessEqual) do
+        while `match`(TokenType.Greater, TokenType.GreaterEqual, TokenType.Less, TokenType.LessEqual) do
             val operator = previous()
             val right = term()
             expr = Expr.Binary(expr, operator, right)
@@ -63,7 +77,7 @@ class Parser(tokens: List[Token]):
 
     private def term(): Expr =
         var expr = factor()
-        while matchToken(TokenType.Minus, TokenType.Plus) do
+        while `match`(TokenType.Minus, TokenType.Plus) do
             val operator = previous()
             val right = factor()
             expr = Expr.Binary(expr, operator, right)
@@ -71,27 +85,27 @@ class Parser(tokens: List[Token]):
 
     private def factor(): Expr =
         var expr = unary()
-        while matchToken(TokenType.Slash, TokenType.Star) do
+        while `match`(TokenType.Slash, TokenType.Star) do
             val operator = previous()
             val right = unary()
             expr = Expr.Binary(expr, operator, right)
         expr
 
     private def unary(): Expr =
-        if matchToken(TokenType.Bang, TokenType.Minus) then
+        if `match`(TokenType.Bang, TokenType.Minus) then
             val operator = previous()
             val right = unary()
             Expr.Unary(operator, right)
         else primary()
 
     private def primary(): Expr =
-        if matchToken(TokenType.False) then Expr.Literal(false)
-        else if matchToken(TokenType.True) then Expr.Literal(true)
-        else if matchToken(TokenType.Nil) then Expr.Literal(null)
-        else if matchToken(TokenType.Number, TokenType.String) then
+        if `match`(TokenType.False) then Expr.Literal(false)
+        else if `match`(TokenType.True) then Expr.Literal(true)
+        else if `match`(TokenType.Nil) then Expr.Literal(null)
+        else if `match`(TokenType.Number, TokenType.String) then
             val value = previous().literal
             Expr.Literal(value)
-        else if matchToken(TokenType.LeftParen) then
+        else if `match`(TokenType.LeftParen) then
             val expr = expression()
             consume(TokenType.RightParen, "Expect ')' after expression.")
             Expr.Grouping(expr)
@@ -118,7 +132,7 @@ class Parser(tokens: List[Token]):
         advance()
         while !isAtEnd() do
             if previous().tokenType == TokenType.Semicolon then return
-            if matchToken(
+            if `match`(
                     TokenType.Class,
                     TokenType.Fun,
                     TokenType.Var,

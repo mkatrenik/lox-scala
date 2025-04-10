@@ -1,6 +1,6 @@
 package lox
 
-class AstPrinter extends Visitor[String]:
+class AstPrinter extends ExprVisitor[String]:
     def toString(exprs: List[Expr]): String =
         exprs.map(visit).mkString(", ")
 

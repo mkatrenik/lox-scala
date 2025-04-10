@@ -19,7 +19,7 @@ class ParserTest extends munit.FunSuite:
 
     test("test boolean") {
         val source = """
-        |true
+        |true;
         """.stripMargin
         val scanner = Scanner(source)
         val tokens = scanner.scanTokens()
@@ -31,9 +31,10 @@ class ParserTest extends munit.FunSuite:
                     assertEquals(
                         exps,
                         List(
-                            Expr.Literal(true)
+                            Stmt.Expression(
+                                Expr.Literal(true)
+                            )
                         )
                     )
             )
-
     }

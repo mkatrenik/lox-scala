@@ -14,7 +14,7 @@ enum Expr:
     case Unary(operator: Token, right: Expr)
     case Variable(name: Token)
 
-    def accept[T](visitor: Visitor[T]): T =
+    def accept[T](visitor: ExprVisitor[T]): T =
         this match
             case a @ Assign(_, _)     => visitor.visitAssignExpr(a)
             case b @ Binary(_, _, _)  => visitor.visitBinaryExpr(b)

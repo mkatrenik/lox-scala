@@ -2,17 +2,32 @@ package lox
 
 import lox.Expr.*
 import scala.util.Try
+import lox.Stmt.Print
+import lox.Stmt.Expression
 
-class Interpreter extends Visitor[Any]:
-    def interpret(expr: Expr): Try[Any] = Try(evaluate(expr))
+class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
+
+    def interpret(statements: List[Stmt]): Try[Unit] =
+        Try:
+            statements.foreach(execute(_))
 
     def evaluate(expr: Expr): Any = expr.accept(this)
+    def execute(stmt: Stmt): Unit = stmt.accept(this)
 
     def runtimeError(token: Token, message: String): Nothing =
         throw RuntimeError(token, message)
 
     def errorNumbersOrStrings(token: Token) = runtimeError(token, "Operands must be two numbers or two strings.")
     def errorNumbers(token: Token) = runtimeError(token, "Operands must be two numbers.")
+
+    def visitExpressionStmt(stmt: Expression): Unit =
+        evaluate(stmt.expression)
+        ()
+
+    def visitPrintStmt(stmt: Print): Unit =
+        val value = evaluate(stmt.expression)
+        println(stringify(value))
+        ()
 
     def visitLiteralExpr(expr: Literal): Any = expr.value.asInstanceOf[Any]
     def visitGroupingExpr(expr: Grouping): Any = evaluate(expr.expression)
