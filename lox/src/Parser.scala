@@ -1,7 +1,8 @@
 package lox
 
 import scala.util.boundary, boundary.break
-import scala.util.Try
+import scala.util.{Failure, Try}
+import scala.util.Success
 
 class Parser(tokens: List[Token]):
 
@@ -10,7 +11,15 @@ class Parser(tokens: List[Token]):
     def parse(): Try[List[Stmt]] =
         val statements = List.newBuilder[Stmt]
         Try:
-            while !isAtEnd() do statements += statement()
+            while !isAtEnd() do
+                val decl = Try(declaration())
+                decl match
+                    case Success(d) => statements += d
+                    case Failure(e: ParseError) =>
+                        reportError(tokens(current).line, "Parse error", e.message)
+                        synchronize()
+                    case Failure(e) =>
+                        throw e
             statements.result()
 
     def reportError(line: Int, where: String, message: String) =
@@ -19,6 +28,8 @@ class Parser(tokens: List[Token]):
     private def isAtEnd(): Boolean =
         current >= tokens.length || tokens(current).tokenType == TokenType.EOF
 
+    /** check if the next token is one of the given token types and advance the current token if it is.
+      */
     private def `match`(tokenTypes: TokenType*): Boolean =
         boundary:
             for tokenType <- tokenTypes do
@@ -41,6 +52,19 @@ class Parser(tokens: List[Token]):
     private def peek(): Token =
         if isAtEnd() then tokens(tokens.length - 1)
         else tokens(current)
+
+    private def declaration(): Stmt =
+        // if `match`(TokenType.Class) then classDeclaration()
+        // else if `match`(TokenType.Fun) then function("function")
+        if `match`(TokenType.Var) then varDeclaration()
+        else statement()
+
+    private def varDeclaration(): Stmt =
+        val name = consume(TokenType.Identifier, "Expect variable name.")
+        var initializer: Option[Expr] = None
+        if `match`(TokenType.Equal) then initializer = Some(expression())
+        consume(TokenType.Semicolon, "Expect ';' after variable declaration.")
+        Stmt.Var(name, initializer)
 
     private def statement(): Stmt =
         if `match`(TokenType.Print) then printStatement()
@@ -109,8 +133,7 @@ class Parser(tokens: List[Token]):
             val expr = expression()
             consume(TokenType.RightParen, "Expect ')' after expression.")
             Expr.Grouping(expr)
-
-        // else if matchToken(TokenType.Identifier) then Expr.Variable(previous())
+        else if `match`(TokenType.Identifier) then Expr.Variable(previous())
         // else if matchToken(TokenType.Super) then
         //     val keyword = previous()
         //     consume(TokenType.Dot, "Expect '.' after 'super'.")

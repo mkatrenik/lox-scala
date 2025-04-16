@@ -1,6 +1,5 @@
 package lox
 
-import lox.Expr.*
 import scala.util.Try
 import lox.Stmt.Print
 import lox.Stmt.Expression
@@ -29,9 +28,9 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
         println(stringify(value))
         ()
 
-    def visitLiteralExpr(expr: Literal): Any = expr.value.asInstanceOf[Any]
-    def visitGroupingExpr(expr: Grouping): Any = evaluate(expr.expression)
-    def visitUnaryExpr(expr: Unary): Any =
+    def visitLiteralExpr(expr: Expr.Literal): Any = expr.value.asInstanceOf[Any]
+    def visitGroupingExpr(expr: Expr.Grouping): Any = evaluate(expr.expression)
+    def visitUnaryExpr(expr: Expr.Unary): Any =
         val right = evaluate(expr.right)
         (expr.operator.tokenType, right) match
             case (TokenType.Minus, right: Double) => -right
@@ -42,7 +41,7 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
                     s"Invalid unary operator: ${expr.operator.lexeme} for ${right.getClass.getSimpleName}"
                 )
 
-    def visitBinaryExpr(expr: Binary): Any =
+    def visitBinaryExpr(expr: Expr.Binary): Any =
         val right = evaluate(expr.right)
         val left = evaluate(expr.left)
         expr.operator.tokenType match
@@ -95,14 +94,14 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
                     case _                                 => errorNumbersOrStrings
             case _ => runtimeError(expr.operator, "Invalid binary operator: " + expr.operator.lexeme)
 
-    def visitAssignExpr(expr: Assign): Any = ???
-    def visitVariableExpr(expr: Variable): Any = ???
-    def visitCallExpr(expr: Call): Any = ???
-    def visitLogicalExpr(expr: Logical): Any = ???
-    def visitSetExpr(expr: Set): Any = ???
-    def visitGetExpr(expr: Get): Any = ???
-    def visitThisExpr(expr: This): Any = ???
-    def visitSuperExpr(expr: Super): Any = ???
+    def visitAssignExpr(expr: Expr.Assign): Any = ???
+    def visitVariableExpr(expr: Expr.Variable): Any = ???
+    def visitCallExpr(expr: Expr.Call): Any = ???
+    def visitLogicalExpr(expr: Expr.Logical): Any = ???
+    def visitSetExpr(expr: Expr.Set): Any = ???
+    def visitGetExpr(expr: Expr.Get): Any = ???
+    def visitThisExpr(expr: Expr.This): Any = ???
+    def visitSuperExpr(expr: Expr.Super): Any = ???
     // def visitForExpr(expr: For): Any = ???
     // def visitIfExpr(expr: If): Any = ???
     // def visitWhileExpr(expr: While): Any = ???
@@ -113,7 +112,15 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     // def visitContinueExpr(expr: Continue): Any = ???
     // def visitFunctionExpr(expr: Function): Any = ???
     // def visitClassExpr(expr: Class): Any = ???
-    // def visitVarExpr(expr: Var): Any = ???
+    def visitVarStmt(stmt: Stmt.Var): Unit = stmt.initializer match
+        case None => ()
+        case Some(value) =>
+            value match
+                case expr: Expr =>
+                    val evaluatedValue = evaluate(expr)
+                    println(s"Variable ${stmt.name.lexeme} initialized with value: $evaluatedValue")
+                case _ => ()
+
     // def visitImportExpr(expr: Import): Any = ???
     // def visitExpressionStmt(expr: Expression): Any = ???
     // def visitPrintStmt(expr: Print): Any = ???
