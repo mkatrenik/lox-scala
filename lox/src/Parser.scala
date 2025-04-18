@@ -81,7 +81,21 @@ class Parser(tokens: List[Token]):
         Stmt.Expression(expr)
 
     private def expression(): Expr =
-        equality()
+        assignment()
+
+    private def assignment(): Expr =
+        val expr = equality()
+        if `match`(TokenType.Equal) then
+            val equals = previous()
+            val value = assignment()
+            expr match
+                case Expr.Variable(name) =>
+                    return Expr.Assign(name, value)
+                case Expr.Get(objectExpr, name) =>
+                    return Expr.Set(objectExpr, name, value)
+                case _ =>
+                    throw error(equals, "Invalid assignment target.")
+        expr
 
     private def equality(): Expr =
         var expr = comparison()

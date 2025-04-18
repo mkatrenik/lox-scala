@@ -8,15 +8,15 @@ class InterpreterTest extends munit.FunSuite:
         val source = """
         |print 1 + 2;
         """.stripMargin
-        val scanner = Scanner(source)
-        val tokens = scanner.scanTokens()
-        val parser = Parser(tokens)
+
+        val tokens = Scanner(source).scanTokens()
+        val ast = Parser(tokens).parse().get
         val interpreter = Interpreter()
 
-        parser.parse() match
-            case Failure(e) => fail(s"Unexpected parsing error: ${e.getMessage}")
-            case Success(statements) =>
-                interpreter.interpret(statements) match
-                    case Failure(e) => fail(s"Unexpected interpretation error: ${e.getMessage}")
-                    case Success(_) => ()
+        val printer = AstPrinter().toString(ast)
+        assertEquals(printer, "(print (+ 1.0 2.0))")
+
+        interpreter.interpret(ast) match
+            case Failure(e) => fail(s"Unexpected interpretation error: ${e.getMessage}")
+            case Success(_) => ()
     }

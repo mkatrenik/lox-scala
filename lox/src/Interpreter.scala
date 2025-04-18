@@ -5,6 +5,7 @@ import lox.Stmt.Print
 import lox.Stmt.Expression
 
 class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
+    private val environment = Environment()
 
     def interpret(statements: List[Stmt]): Try[Unit] =
         Try:
@@ -94,8 +95,14 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
                     case _                                 => errorNumbersOrStrings
             case _ => runtimeError(expr.operator, "Invalid binary operator: " + expr.operator.lexeme)
 
-    def visitAssignExpr(expr: Expr.Assign): Any = ???
-    def visitVariableExpr(expr: Expr.Variable): Any = ???
+    def visitAssignExpr(expr: Expr.Assign): Any =
+        val value = evaluate(expr.value)
+        environment.assign(expr.name, value)
+        value
+
+    def visitVariableExpr(expr: Expr.Variable): Any =
+        environment.get(expr.name)
+
     def visitCallExpr(expr: Expr.Call): Any = ???
     def visitLogicalExpr(expr: Expr.Logical): Any = ???
     def visitSetExpr(expr: Expr.Set): Any = ???
@@ -112,14 +119,12 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     // def visitContinueExpr(expr: Continue): Any = ???
     // def visitFunctionExpr(expr: Function): Any = ???
     // def visitClassExpr(expr: Class): Any = ???
-    def visitVarStmt(stmt: Stmt.Var): Unit = stmt.initializer match
-        case None => ()
-        case Some(value) =>
-            value match
-                case expr: Expr =>
-                    val evaluatedValue = evaluate(expr)
-                    println(s"Variable ${stmt.name.lexeme} initialized with value: $evaluatedValue")
-                case _ => ()
+    def visitVarStmt(stmt: Stmt.Var): Unit =
+        val evaluatedValue = stmt.initializer match
+            case None        => null
+            case Some(value) => evaluate(value)
+        environment.define(stmt.name.lexeme, evaluatedValue)
+        // println(s"Variable ${stmt.name.lexeme} initialized with value: $evaluatedValue")
 
     // def visitImportExpr(expr: Import): Any = ???
     // def visitExpressionStmt(expr: Expression): Any = ???

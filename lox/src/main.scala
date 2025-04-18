@@ -9,7 +9,7 @@ def stringify(value: Any): String =
         case _         => value.toString
 
 class Lox:
-    private val astPrinter = AstPrinter()
+    // private val astPrinter = AstPrinter()
     private val interpreter = Interpreter()
 
     def runPrompt(): Unit =

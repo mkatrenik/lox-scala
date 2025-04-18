@@ -1,7 +1,5 @@
 package lox
 
-import scala.util.Failure
-
 class ParserTest extends munit.FunSuite:
     test("error on expression") {
         val source = """
@@ -10,11 +8,21 @@ class ParserTest extends munit.FunSuite:
         val scanner = Scanner(source)
         val tokens = scanner.scanTokens()
 
-        Parser(tokens)
-            .parse() match
-            case Failure(e) =>
-                assertEquals(e.getMessage, "Expect expression.")
-            case _ => fail("Expected a parsing error")
+        val outputCapture = new java.io.ByteArrayOutputStream()
+
+        val ast = Console.withOut(outputCapture) {
+            Parser(tokens)
+                .parse()
+        }
+
+        // we handled ParseError in the parser
+        assert(ast.isSuccess)
+
+        assertEquals(
+            outputCapture.toString.trim,
+            """[line 2] Error:  at 'x': Expect ')' after expression.
+            |[line 3] Parsing error: Parse error: Expect ')' after expression.""".stripMargin
+        )
     }
 
     test("boolean") {

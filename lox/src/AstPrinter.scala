@@ -1,10 +1,18 @@
 package lox
 
-class AstPrinter extends ExprVisitor[String]:
+import scala.annotation.targetName
+
+class AstPrinter extends ExprVisitor[String], StmtVisitor[String]:
+    @targetName("toStringExpression")
     def toString(exprs: List[Expr]): String =
         exprs.map(visit).mkString(", ")
 
+    @targetName("toStringStatement")
+    def toString(stmt: List[Stmt]): String =
+        stmt.map(visit).mkString(", ")
+
     def visit(expr: Expr): String = expr.accept(this)
+    def visit(stmt: Stmt): String = stmt.accept(this)
 
     def visitAssignExpr(expr: Expr.Assign): String =
         s"(${expr.name.lexeme} ${visit(expr.value)})"
@@ -41,6 +49,18 @@ class AstPrinter extends ExprVisitor[String]:
 
     def visitVariableExpr(expr: Expr.Variable): String =
         s"(${expr.name.lexeme})"
+
+    def visitExpressionStmt(stmt: Stmt.Expression): String =
+        s"(${visit(stmt.expression)})"
+
+    def visitPrintStmt(stmt: Stmt.Print): String =
+        s"(print ${visit(stmt.expression)})"
+
+    def visitVarStmt(stmt: Stmt.Var): String =
+        val initializer = stmt.initializer match
+            case None        => ""
+            case Some(value) => s" ${visit(value)}"
+        s"(var ${stmt.name.lexeme}$initializer)"
 
 object AstPrinter:
     def print(expr: Expr): String = AstPrinter().visit(expr)
