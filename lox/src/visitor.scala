@@ -15,7 +15,7 @@ trait ExprVisitor[R]:
     def visitVariableExpr(expr: Expr.Variable): R
 
 trait StmtVisitor[R]:
-    // def visitBlockStmt(stmt: Stmt.Block): R
+    def visitBlockStmt(stmt: Stmt.Block): R
     // def visitClassStmt(stmt: Stmt.Class): R
     def visitExpressionStmt(stmt: Stmt.Expression): R
     // def visitFunctionStmt(stmt: Stmt.Function): R

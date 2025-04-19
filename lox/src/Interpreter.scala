@@ -5,7 +5,7 @@ import lox.Stmt.Print
 import lox.Stmt.Expression
 
 class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
-    private val environment = Environment()
+    private var environment = Environment()
 
     def interpret(statements: List[Stmt]): Try[Unit] =
         Try:
@@ -129,7 +129,14 @@ class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     // def visitImportExpr(expr: Import): Any = ???
     // def visitExpressionStmt(expr: Expression): Any = ???
     // def visitPrintStmt(expr: Print): Any = ???
-    // def visitBlockStmt(expr: Block): Any = ???
+    def visitBlockStmt(expr: Stmt.Block): Unit =
+        val previous = environment
+        environment = Environment(Some(environment))
+        try
+            expr.statements.foreach(execute(_))
+        finally
+            environment = previous
+        ()
     // def visitIfStmt(expr: If): Any = ???
     // def visitWhileStmt(expr: While): Any = ???
     // def visitForStmt(expr: For): Any = ???

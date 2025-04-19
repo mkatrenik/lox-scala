@@ -62,5 +62,9 @@ class AstPrinter extends ExprVisitor[String], StmtVisitor[String]:
             case Some(value) => s" ${visit(value)}"
         s"(var ${stmt.name.lexeme}$initializer)"
 
+    def visitBlockStmt(stmt: Stmt.Block): String =
+        val statements = stmt.statements.map(visit).mkString(" ")
+        s"(block $statements)"
+
 object AstPrinter:
     def print(expr: Expr): String = AstPrinter().visit(expr)

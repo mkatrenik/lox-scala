@@ -67,8 +67,15 @@ class Parser(tokens: List[Token]):
         Stmt.Var(name, initializer)
 
     private def statement(): Stmt =
-        if `match`(TokenType.Print) then printStatement()
+        if `match`(TokenType.LeftBrace) then Stmt.Block(block())
+        else if `match`(TokenType.Print) then printStatement()
         else expressionStatement()
+
+    private def block(): List[Stmt] =
+        val statements = List.newBuilder[Stmt]
+        while !isAtEnd() && !check(TokenType.RightBrace) do statements += declaration()
+        consume(TokenType.RightBrace, "Expect '}' after block.")
+        statements.result()
 
     private def printStatement(): Stmt =
         val value = expression()

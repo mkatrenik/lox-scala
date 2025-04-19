@@ -1,5 +1,5 @@
 run:
-	scala-cli run . --main-class lox.run
+	scala-cli run . --main-class lox.run -- $(filter-out $@,$(MAKECMDGOALS))
 
 compile:
 	scala-cli compile .
