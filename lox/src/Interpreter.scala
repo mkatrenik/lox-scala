@@ -4,7 +4,7 @@ import scala.util.Try
 import lox.Stmt.Print
 import lox.Stmt.Expression
 
-class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
+final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     private var environment = Environment()
 
     def interpret(statements: List[Stmt]): Try[Unit] =

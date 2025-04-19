@@ -23,7 +23,7 @@ case class Token(tokenType: TokenType, lexeme: String, literal: Any, line: Int)
 object Token:
     def apply(tokenType: TokenType): Token = Token(tokenType, "", null, 0)
 
-class Scanner(val source: String):
+final class Scanner(val source: String):
     val tokens = mutable.ListBuffer[Token]()
     // The current position in the source code
     private var current = 0

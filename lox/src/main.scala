@@ -13,11 +13,24 @@ class Lox:
     private val interpreter = Interpreter()
 
     def runPrompt(): Unit =
+        val inputBuffer = new StringBuilder()
         while true do
-            print("> ")
-            val input = scala.io.StdIn.readLine()
-            if input.isEmpty then return
-            run(input)
+            val prompt = if inputBuffer.isEmpty then "> " else "| "
+            print(prompt)
+
+            val line = scala.io.StdIn.readLine()
+
+            if line eq null then // EOF (Ctrl+D)
+                return
+            else if line.isEmpty && !inputBuffer.isEmpty then
+                // Empty line after some input: execute the buffer
+                run(inputBuffer.toString)
+                inputBuffer.clear()
+                Lox.hadError = false
+            else if line.nonEmpty || inputBuffer.nonEmpty then
+                // Non-empty line, or first empty line (ignore first empty line)
+                if !inputBuffer.isEmpty then inputBuffer.append("\n")
+                inputBuffer.append(line)
 
     def runFile(fileName: String): Unit =
         val source = scala.io.Source.fromFile(fileName).mkString

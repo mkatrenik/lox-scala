@@ -4,7 +4,7 @@ import scala.util.boundary, boundary.break
 import scala.util.{Failure, Try}
 import scala.util.Success
 
-class Parser(tokens: List[Token]):
+final class Parser(tokens: List[Token]):
 
     private var current = 0
 

@@ -1,6 +1,6 @@
 package lox
 
-class Environment(enclosing: Option[Environment] = None):
+final class Environment(enclosing: Option[Environment] = None):
     private val values = scala.collection.mutable.Map[String, Any]()
     // private val locals = scala.collection.mutable.Map[Expr, Int]()
 

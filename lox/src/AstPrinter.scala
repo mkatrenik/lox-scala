@@ -2,7 +2,7 @@ package lox
 
 import scala.annotation.targetName
 
-class AstPrinter extends ExprVisitor[String], StmtVisitor[String]:
+final class AstPrinter extends ExprVisitor[String], StmtVisitor[String]:
     @targetName("toStringExpression")
     def toString(exprs: List[Expr]): String =
         exprs.map(visit).mkString(", ")
