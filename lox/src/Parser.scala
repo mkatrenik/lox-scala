@@ -38,6 +38,8 @@ final class Parser(tokens: List[Token]):
                     break(true)
             false
 
+    /** check if the current token is the given token type
+      */
     private def check(tokenType: TokenType): Boolean =
         if isAtEnd() then false
         else tokens(current).tokenType == tokenType
@@ -71,7 +73,7 @@ final class Parser(tokens: List[Token]):
         else if `match`(TokenType.Print) then printStatement()
         else if `match`(TokenType.If) then ifStatement()
         else if `match`(TokenType.While) then whileStatement()
-        // else if `match`(TokenType.For) then forStatement()
+        else if `match`(TokenType.For) then forStatement()
         // else if `match`(TokenType.Return) then returnStatement()
         else expressionStatement()
 
@@ -97,6 +99,23 @@ final class Parser(tokens: List[Token]):
         consume(TokenType.RightParen, "Expect ')' after while condition.")
         val body = statement()
         Stmt.While(condition, body)
+
+    private def forStatement(): Stmt =
+        consume(TokenType.LeftParen, "Expect '(' after 'for'.")
+        val initializer =
+            if `match`(TokenType.Semicolon) then None
+            else if `match`(TokenType.Var) then Some(varDeclaration())
+            else Some(expressionStatement())
+        val condition =
+            if check(TokenType.Semicolon) then None
+            else Some(expression())
+        consume(TokenType.Semicolon, "Expect ';' after loop condition.")
+        val increment =
+            if check(TokenType.RightParen) then None
+            else Some(expression())
+        consume(TokenType.RightParen, "Expect ')' after for clauses.")
+        val body = statement()
+        Stmt.For(initializer, condition, increment, body)
 
     private def printStatement(): Stmt =
         val value = expression()

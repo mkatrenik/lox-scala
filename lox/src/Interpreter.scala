@@ -45,54 +45,55 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     def visitBinaryExpr(expr: Expr.Binary): Any =
         val right = evaluate(expr.right)
         val left = evaluate(expr.left)
+
         expr.operator.tokenType match
             case TokenType.Plus =>
                 (left, right) match
                     case (l: Double, r: Double) => l + r
                     case (l: String, r: String) => l + r
-                    case _                      => errorNumbersOrStrings
+                    case _                      => errorNumbersOrStrings(expr.operator)
             case TokenType.Minus =>
                 (left, right) match
                     case (l: Double, r: Double) => l - r
-                    case _                      => errorNumbers
+                    case _                      => errorNumbers(expr.operator)
             case TokenType.Star =>
                 (left, right) match
                     case (l: Double, r: Double) => l * r
-                    case _                      => errorNumbers
+                    case _                      => errorNumbers(expr.operator)
             case TokenType.Slash =>
                 (left, right) match
                     case (l: Double, r: Double) =>
                         if r == 0 then runtimeError(expr.operator, "Division by zero.")
                         l / r
-                    case _ => errorNumbers
+                    case _ => errorNumbers(expr.operator)
             case TokenType.Greater =>
                 (left, right) match
                     case (l: Double, r: Double) => l > r
-                    case _                      => errorNumbers
+                    case _                      => errorNumbers(expr.operator)
             case TokenType.GreaterEqual =>
                 (left, right) match
                     case (l: Double, r: Double) => l >= r
-                    case _                      => errorNumbers
+                    case _                      => errorNumbers(expr.operator)
             case TokenType.Less =>
                 (left, right) match
                     case (l: Double, r: Double) => l < r
-                    case _                      => errorNumbers
+                    case _                      => errorNumbers(expr.operator)
             case TokenType.LessEqual =>
                 (left, right) match
                     case (l: Double, r: Double) => l <= r
-                    case _                      => errorNumbers
+                    case _                      => errorNumbers(expr.operator)
             case TokenType.EqualEqual =>
                 (left.nullToOption, right.nullToOption) match
                     case (None, None)                      => true
                     case (None, Some(_)) | (Some(_), None) => false
                     case (Some(l), Some(r))                => l == r
-                    case _                                 => errorNumbersOrStrings
+                    case _                                 => errorNumbersOrStrings(expr.operator)
             case TokenType.BangEqual =>
                 (left.nullToOption, right.nullToOption) match
                     case (None, None)                      => false
                     case (None, Some(_)) | (Some(_), None) => true
                     case (Some(l), Some(r))                => l != r
-                    case _                                 => errorNumbersOrStrings
+                    case _                                 => errorNumbersOrStrings(expr.operator)
             case _ => runtimeError(expr.operator, "Invalid binary operator: " + expr.operator.lexeme)
 
     def visitAssignExpr(expr: Expr.Assign): Any =
@@ -123,6 +124,19 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
 
     def visitWhileStmt(stmt: Stmt.While): Unit =
         while isTruthy(evaluate(stmt.condition)) do execute(stmt.body)
+
+    def visitForStmt(stmt: Stmt.For): Unit =
+        stmt.initializer match
+            case Some(initializer) => execute(initializer)
+            case None              => ()
+        while stmt.condition match
+                case Some(condition) => isTruthy(evaluate(condition))
+                case None            => true
+        do
+            execute(stmt.body)
+            stmt.increment match
+                case Some(increment) => evaluate(increment)
+                case None            => ()
 
     def visitVarStmt(stmt: Stmt.Var): Unit =
         val evaluatedValue = stmt.initializer match
