@@ -69,6 +69,10 @@ final class Parser(tokens: List[Token]):
     private def statement(): Stmt =
         if `match`(TokenType.LeftBrace) then Stmt.Block(block())
         else if `match`(TokenType.Print) then printStatement()
+        else if `match`(TokenType.If) then ifStatement()
+        // else if `match`(TokenType.While) then whileStatement()
+        // else if `match`(TokenType.For) then forStatement()
+        // else if `match`(TokenType.Return) then returnStatement()
         else expressionStatement()
 
     private def block(): List[Stmt] =
@@ -76,6 +80,16 @@ final class Parser(tokens: List[Token]):
         while !isAtEnd() && !check(TokenType.RightBrace) do statements += declaration()
         consume(TokenType.RightBrace, "Expect '}' after block.")
         statements.result()
+
+    private def ifStatement(): Stmt =
+        consume(TokenType.LeftParen, "Expect '(' after 'if'.")
+        val condition = expression()
+        consume(TokenType.RightParen, "Expect ')' after if condition.")
+        val thenBranch = statement()
+        val elseBranch =
+            if `match`(TokenType.Else) then Some(statement())
+            else None
+        Stmt.If(condition, thenBranch, elseBranch)
 
     private def printStatement(): Stmt =
         val value = expression()

@@ -66,5 +66,11 @@ final class AstPrinter extends ExprVisitor[String], StmtVisitor[String]:
         val statements = stmt.statements.map(visit).mkString(" ")
         s"(block $statements)"
 
+    def visitIfStmt(stmt: Stmt.If): String =
+        val elseBranch = stmt.elseBranch match
+            case None        => ""
+            case Some(value) => s" ${visit(value)}"
+        s"(if ${visit(stmt.condition)} ${visit(stmt.thenBranch)}$elseBranch)"
+
 object AstPrinter:
     def print(expr: Expr): String = AstPrinter().visit(expr)

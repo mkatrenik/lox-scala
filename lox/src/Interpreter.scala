@@ -137,7 +137,14 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
         finally
             environment = previous
         ()
-    // def visitIfStmt(expr: If): Any = ???
+
+    def visitIfStmt(expr: Stmt.If): Unit =
+        if isTruthy(evaluate(expr.condition)) then execute(expr.thenBranch)
+        else
+            expr.elseBranch match
+                case Some(elseBranch) => execute(elseBranch)
+                case None             => ()
+
     // def visitWhileStmt(expr: While): Any = ???
     // def visitForStmt(expr: For): Any = ???
     // def visitFunctionStmt(expr: Function): Any = ???
