@@ -104,31 +104,29 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
         environment.get(expr.name)
 
     def visitCallExpr(expr: Expr.Call): Any = ???
-    def visitLogicalExpr(expr: Expr.Logical): Any = ???
+
+    def visitLogicalExpr(expr: Expr.Logical): Any =
+        val left = evaluate(expr.left)
+        expr.operator.tokenType match
+            case TokenType.Or =>
+                if isTruthy(left) then left
+                else evaluate(expr.right)
+            case TokenType.And =>
+                if isTruthy(left) then evaluate(expr.right)
+                else left
+            case _ => throw new RuntimeError(expr.operator, "Invalid logical operator.")
+
     def visitSetExpr(expr: Expr.Set): Any = ???
     def visitGetExpr(expr: Expr.Get): Any = ???
     def visitThisExpr(expr: Expr.This): Any = ???
     def visitSuperExpr(expr: Expr.Super): Any = ???
-    // def visitForExpr(expr: For): Any = ???
-    // def visitIfExpr(expr: If): Any = ???
-    // def visitWhileExpr(expr: While): Any = ???
-    // def visitBlockExpr(expr: Block): Any = ???
-    // def visitPrintExpr(expr: Print): Any = ???
-    // def visitReturnExpr(expr: Return): Any = ???
-    // def visitBreakExpr(expr: Break): Any = ???
-    // def visitContinueExpr(expr: Continue): Any = ???
-    // def visitFunctionExpr(expr: Function): Any = ???
-    // def visitClassExpr(expr: Class): Any = ???
+
     def visitVarStmt(stmt: Stmt.Var): Unit =
         val evaluatedValue = stmt.initializer match
             case None        => null
             case Some(value) => evaluate(value)
         environment.define(stmt.name.lexeme, evaluatedValue)
-        // println(s"Variable ${stmt.name.lexeme} initialized with value: $evaluatedValue")
 
-    // def visitImportExpr(expr: Import): Any = ???
-    // def visitExpressionStmt(expr: Expression): Any = ???
-    // def visitPrintStmt(expr: Print): Any = ???
     def visitBlockStmt(expr: Stmt.Block): Unit =
         val previous = environment
         environment = Environment(Some(environment))
@@ -144,11 +142,6 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
             expr.elseBranch match
                 case Some(elseBranch) => execute(elseBranch)
                 case None             => ()
-
-    // def visitWhileStmt(expr: While): Any = ???
-    // def visitForStmt(expr: For): Any = ???
-    // def visitFunctionStmt(expr: Function): Any = ???
-    // def visitClassStmt(expr: Class): Any = ???
 
 def isTruthy(value: Any): Boolean =
     value match

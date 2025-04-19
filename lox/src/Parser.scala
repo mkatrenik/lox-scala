@@ -104,8 +104,24 @@ final class Parser(tokens: List[Token]):
     private def expression(): Expr =
         assignment()
 
+    private def logicalOr(): Expr =
+        var expr = logicalAnd()
+        while `match`(TokenType.Or) do
+            val operator = previous()
+            val right = logicalAnd()
+            expr = Expr.Logical(expr, operator, right)
+        expr
+
+    private def logicalAnd(): Expr =
+        var expr = equality()
+        while `match`(TokenType.And) do
+            val operator = previous()
+            val right = equality()
+            expr = Expr.Logical(expr, operator, right)
+        expr
+
     private def assignment(): Expr =
-        val expr = equality()
+        val expr = logicalOr()
         if `match`(TokenType.Equal) then
             val equals = previous()
             val value = assignment()
