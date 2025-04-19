@@ -121,6 +121,9 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     def visitThisExpr(expr: Expr.This): Any = ???
     def visitSuperExpr(expr: Expr.Super): Any = ???
 
+    def visitWhileStmt(stmt: Stmt.While): Unit =
+        while isTruthy(evaluate(stmt.condition)) do execute(stmt.body)
+
     def visitVarStmt(stmt: Stmt.Var): Unit =
         val evaluatedValue = stmt.initializer match
             case None        => null

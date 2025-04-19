@@ -70,7 +70,7 @@ final class Parser(tokens: List[Token]):
         if `match`(TokenType.LeftBrace) then Stmt.Block(block())
         else if `match`(TokenType.Print) then printStatement()
         else if `match`(TokenType.If) then ifStatement()
-        // else if `match`(TokenType.While) then whileStatement()
+        else if `match`(TokenType.While) then whileStatement()
         // else if `match`(TokenType.For) then forStatement()
         // else if `match`(TokenType.Return) then returnStatement()
         else expressionStatement()
@@ -90,6 +90,13 @@ final class Parser(tokens: List[Token]):
             if `match`(TokenType.Else) then Some(statement())
             else None
         Stmt.If(condition, thenBranch, elseBranch)
+
+    private def whileStatement(): Stmt =
+        consume(TokenType.LeftParen, "Expect '(' after 'while'.")
+        val condition = expression()
+        consume(TokenType.RightParen, "Expect ')' after while condition.")
+        val body = statement()
+        Stmt.While(condition, body)
 
     private def printStatement(): Stmt =
         val value = expression()

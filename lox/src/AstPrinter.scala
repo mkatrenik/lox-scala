@@ -72,5 +72,8 @@ final class AstPrinter extends ExprVisitor[String], StmtVisitor[String]:
             case Some(value) => s" ${visit(value)}"
         s"(if ${visit(stmt.condition)} ${visit(stmt.thenBranch)}$elseBranch)"
 
+    def visitWhileStmt(stmt: Stmt.While): String =
+        s"(while ${visit(stmt.condition)} ${visit(stmt.body)})"
+
 object AstPrinter:
     def print(expr: Expr): String = AstPrinter().visit(expr)
