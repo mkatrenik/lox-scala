@@ -5,7 +5,17 @@ import lox.Stmt.Print
 import lox.Stmt.Expression
 
 final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
-    private var environment = Environment()
+    val globals = Environment()
+    private var environment = globals
+
+    globals.define(
+        "clock",
+        new LoxCallable:
+            def call(interpreter: Interpreter, arguments: List[Any]): Any =
+                System.currentTimeMillis() / 1000.0
+            def arity: Int = 0
+            override def toString: String = "<native fn>"
+    )
 
     def interpret(statements: List[Stmt]): Try[Unit] =
         Try:
@@ -104,7 +114,16 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     def visitVariableExpr(expr: Expr.Variable): Any =
         environment.get(expr.name)
 
-    def visitCallExpr(expr: Expr.Call): Any = ???
+    def visitCallExpr(expr: Expr.Call): Any =
+        val callee = evaluate(expr.callee)
+        val arguments = expr.arguments.map(evaluate)
+        callee match
+            case callable: LoxCallable =>
+                if arguments.size != callable.arity then
+                    runtimeError(expr.paren, s"Expected ${callable.arity} arguments but got ${arguments.size}.")
+                callable.call(this, arguments)
+            case _ =>
+                runtimeError(expr.paren, "Can only call functions and classes.")
 
     def visitLogicalExpr(expr: Expr.Logical): Any =
         val left = evaluate(expr.left)
@@ -145,12 +164,15 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
         environment.define(stmt.name.lexeme, evaluatedValue)
 
     def visitBlockStmt(expr: Stmt.Block): Unit =
-        val previous = environment
-        environment = Environment(Some(environment))
+        executeBlock(expr.statements, Environment(Some(environment)))
+
+    def executeBlock(statements: List[Stmt], environment: Environment): Unit =
+        val previous = this.environment
+        this.environment = environment
         try
-            expr.statements.foreach(execute(_))
+            statements.foreach(execute(_))
         finally
-            environment = previous
+            this.environment = previous
         ()
 
     def visitIfStmt(expr: Stmt.If): Unit =
@@ -159,6 +181,10 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
             expr.elseBranch match
                 case Some(elseBranch) => execute(elseBranch)
                 case None             => ()
+
+    def visitFunctionStmt(stmt: Stmt.Function): Unit =
+        val function = LoxFunction(stmt)
+        environment.define(stmt.name.lexeme, function)
 
 def isTruthy(value: Any): Boolean =
     value match

@@ -72,3 +72,24 @@ class InterpreterTest extends munit.FunSuite:
                     assertEquals(outputCapture.toString.trim, "0.0\n1.0\n2.0\n3.0\n4.0")
         }
     }
+
+    test("function") {
+        val source = """
+        |fun sayHi(first, last) {
+        |  print "Hi, " + first + " " + last + "!";
+        |}
+        |sayHi("Dear", "Reader");
+        """.stripMargin
+
+        val tokens = Scanner(source).scanTokens()
+        val ast = Parser(tokens).parse().get
+        val interpreter = Interpreter()
+
+        val outputCapture = new java.io.ByteArrayOutputStream()
+
+        Console.withOut(outputCapture) {
+            interpreter.interpret(ast) match
+                case Failure(e) => fail(s"Unexpected interpretation error: ${e.getMessage}")
+                case Success(_) => assertEquals(outputCapture.toString.trim, "Hi, Dear Reader!")
+        }
+    }

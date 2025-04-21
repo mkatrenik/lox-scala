@@ -57,9 +57,25 @@ final class Parser(tokens: List[Token]):
 
     private def declaration(): Stmt =
         // if `match`(TokenType.Class) then classDeclaration()
-        // else if `match`(TokenType.Fun) then function("function")
-        if `match`(TokenType.Var) then varDeclaration()
+        if `match`(TokenType.Fun) then funDeclaration("function")
+        else if `match`(TokenType.Var) then varDeclaration()
         else statement()
+
+    private def funDeclaration(kind: "function"): Stmt =
+        val name = consume(TokenType.Identifier, s"Expect $kind name.")
+        consume(TokenType.LeftParen, s"Expect '(' after name.")
+        val arguments = scala.collection.mutable.ArrayBuffer[Token]()
+        if !check(TokenType.RightParen) then
+            boundary:
+                while arguments.length < 255 && !`match`(TokenType.RightParen) do
+                    arguments += consume(TokenType.Identifier, "Expect parameter name.")
+                    if `match`(TokenType.Comma) then ()
+                    else break()
+
+        consume(TokenType.RightParen, "Expect ')' after parameters.")
+        consume(TokenType.LeftBrace, s"Expect '{' before $kind body.")
+        val body = block()
+        Stmt.Function(name, arguments.toList, body)
 
     private def varDeclaration(): Stmt =
         val name = consume(TokenType.Identifier, "Expect variable name.")
@@ -197,7 +213,25 @@ final class Parser(tokens: List[Token]):
             val operator = previous()
             val right = unary()
             Expr.Unary(operator, right)
-        else primary()
+        else call()
+
+    private def call(): Expr =
+        var expr = primary()
+        boundary:
+            while true do
+                if `match`(TokenType.LeftParen) then expr = finishCall(expr)
+                else break()
+        expr
+
+    private def finishCall(callee: Expr): Expr =
+        val arguments = scala.collection.mutable.ArrayBuffer[Expr]()
+        if !check(TokenType.RightParen) then
+            arguments += expression()
+            while `match`(TokenType.Comma) do
+                if arguments.length >= 255 then error(peek(), "Cannot have more than 255 arguments.")
+                arguments += expression()
+        val paren = consume(TokenType.RightParen, "Expect ')' after arguments.")
+        Expr.Call(callee, paren, arguments.toList)
 
     private def primary(): Expr =
         if `match`(TokenType.False) then Expr.Literal(false)

@@ -18,7 +18,7 @@ trait StmtVisitor[R]:
     def visitBlockStmt(stmt: Stmt.Block): R
     // def visitClassStmt(stmt: Stmt.Class): R
     def visitExpressionStmt(stmt: Stmt.Expression): R
-    // def visitFunctionStmt(stmt: Stmt.Function): R
+    def visitFunctionStmt(stmt: Stmt.Function): R
     def visitIfStmt(stmt: Stmt.If): R
     def visitPrintStmt(stmt: Stmt.Print): R
     // def visitReturnStmt(stmt: Stmt.Return): R

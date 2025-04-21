@@ -87,5 +87,10 @@ final class AstPrinter extends ExprVisitor[String], StmtVisitor[String]:
             case Some(value) => s" ${visit(value)}"
         s"(for$initializer$condition$increment ${visit(stmt.body)})"
 
+    def visitFunctionStmt(stmt: Stmt.Function): String =
+        val params = stmt.params.map(_.lexeme).mkString(" ")
+        val body = stmt.body.map(visit).mkString(" ")
+        s"(fun ${stmt.name.lexeme} ($params) $body)"
+
 object AstPrinter:
     def print(expr: Expr): String = AstPrinter().visit(expr)
