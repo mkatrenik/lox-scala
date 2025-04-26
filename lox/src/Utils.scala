@@ -9,10 +9,11 @@ trait LoxCallable:
     def arity: Int
 
 class LoxFunction(
-    declaration: Stmt.Function
+    declaration: Stmt.Function,
+    val closure: Environment
 ) extends LoxCallable:
     def call(interpreter: Interpreter, arguments: List[Any]): Any =
-        val environment = Environment(Some(interpreter.globals))
+        val environment = Environment(Some(closure))
         for (i <- 0 until declaration.params.size) do
             environment.define(declaration.params(i).lexeme, arguments(i))
         try interpreter.executeBlock(declaration.body, environment)

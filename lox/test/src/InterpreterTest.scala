@@ -73,12 +73,19 @@ class InterpreterTest extends munit.FunSuite:
         }
     }
 
-    test("function") {
+    test("function declaration with closure") {
         val source = """
-        |fun sayHi(first, last) {
-        |  print "Hi, " + first + " " + last + "!";
+        |fun makeCounter() {
+        |  var i = 0;
+        |  fun count() {
+        |      i = i + 1;
+        |      print i;
+        |  }
+        |  return count;
         |}
-        |sayHi("Dear", "Reader");
+        |var counter = makeCounter();
+        |counter(); // "1".
+        |counter(); // "2".
         """.stripMargin
 
         val tokens = Scanner(source).scanTokens()
@@ -90,6 +97,6 @@ class InterpreterTest extends munit.FunSuite:
         Console.withOut(outputCapture) {
             interpreter.interpret(ast) match
                 case Failure(e) => fail(s"Unexpected interpretation error: ${e.getMessage}")
-                case Success(_) => assertEquals(outputCapture.toString.trim, "Hi, Dear Reader!")
+                case Success(_) => assertEquals(outputCapture.toString.trim, "1.0\n2.0")
         }
     }

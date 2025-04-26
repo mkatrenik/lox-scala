@@ -188,7 +188,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
                 case None             => ()
 
     def visitFunctionStmt(stmt: Stmt.Function): Unit =
-        val function = LoxFunction(stmt)
+        val function = LoxFunction(stmt, environment)
         environment.define(stmt.name.lexeme, function)
 
     def visitReturnStmt(stmt: Stmt.Return): Unit =
