@@ -92,5 +92,11 @@ final class AstPrinter extends ExprVisitor[String], StmtVisitor[String]:
         val body = stmt.body.map(visit).mkString(" ")
         s"(fun ${stmt.name.lexeme} ($params) $body)"
 
+    def visitReturnStmt(stmt: Stmt.Return): String =
+        val value = stmt.value match
+            case None        => ""
+            case Some(value) => s" ${visit(value)}"
+        s"(return$value)"
+
 object AstPrinter:
     def print(expr: Expr): String = AstPrinter().visit(expr)

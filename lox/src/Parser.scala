@@ -90,8 +90,15 @@ final class Parser(tokens: List[Token]):
         else if `match`(TokenType.If) then ifStatement()
         else if `match`(TokenType.While) then whileStatement()
         else if `match`(TokenType.For) then forStatement()
-        // else if `match`(TokenType.Return) then returnStatement()
+        else if `match`(TokenType.Return) then returnStatement()
         else expressionStatement()
+
+    private def returnStatement(): Stmt =
+        val keyword = previous()
+        var value: Option[Expr] = None
+        if !check(TokenType.Semicolon) then value = Some(expression())
+        consume(TokenType.Semicolon, "Expect ';' after return value.")
+        Stmt.Return(keyword, value)
 
     private def block(): List[Stmt] =
         val statements = List.newBuilder[Stmt]

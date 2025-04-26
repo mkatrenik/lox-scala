@@ -1,6 +1,5 @@
 //> using scala 3.6.4
 //> using dep com.lihaoyi::pprint::0.9.0
-//> using dep in.rcard.yaes::yaes-core::0.2.0
 //> using toolkit default
 
 //> using options -Yexplicit-nulls -deprecation -feature -unchecked -Wunused:all -experimental -language:experimental.namedTuples

@@ -27,7 +27,8 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     def runtimeError(token: Token, message: String): Nothing =
         throw RuntimeError(token, message)
 
-    def errorNumbersOrStrings(token: Token) = runtimeError(token, "Operands must be two numbers or two strings.")
+    def errorNumbersOrStrings(token: Token) =
+        runtimeError(token, "Operands must be two numbers or two strings.")
     def errorNumbers(token: Token) = runtimeError(token, "Operands must be two numbers.")
 
     def visitExpressionStmt(stmt: Expression): Unit =
@@ -104,7 +105,8 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
                     case (None, Some(_)) | (Some(_), None) => true
                     case (Some(l), Some(r))                => l != r
                     case _                                 => errorNumbersOrStrings(expr.operator)
-            case _ => runtimeError(expr.operator, "Invalid binary operator: " + expr.operator.lexeme)
+            case _ =>
+                runtimeError(expr.operator, "Invalid binary operator: " + expr.operator.lexeme)
 
     def visitAssignExpr(expr: Expr.Assign): Any =
         val value = evaluate(expr.value)
@@ -120,7 +122,10 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
         callee match
             case callable: LoxCallable =>
                 if arguments.size != callable.arity then
-                    runtimeError(expr.paren, s"Expected ${callable.arity} arguments but got ${arguments.size}.")
+                    runtimeError(
+                        expr.paren,
+                        s"Expected ${callable.arity} arguments but got ${arguments.size}."
+                    )
                 callable.call(this, arguments)
             case _ =>
                 runtimeError(expr.paren, "Can only call functions and classes.")
@@ -185,6 +190,12 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     def visitFunctionStmt(stmt: Stmt.Function): Unit =
         val function = LoxFunction(stmt)
         environment.define(stmt.name.lexeme, function)
+
+    def visitReturnStmt(stmt: Stmt.Return): Unit =
+        val value = stmt.value match
+            case Some(value) => evaluate(value)
+            case None        => null
+        throw Return(value)
 
 def isTruthy(value: Any): Boolean =
     value match

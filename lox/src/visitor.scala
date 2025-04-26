@@ -21,7 +21,7 @@ trait StmtVisitor[R]:
     def visitFunctionStmt(stmt: Stmt.Function): R
     def visitIfStmt(stmt: Stmt.If): R
     def visitPrintStmt(stmt: Stmt.Print): R
-    // def visitReturnStmt(stmt: Stmt.Return): R
+    def visitReturnStmt(stmt: Stmt.Return): R
     def visitVarStmt(stmt: Stmt.Var): R
     def visitWhileStmt(stmt: Stmt.While): R
     def visitForStmt(stmt: Stmt.For): R

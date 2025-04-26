@@ -13,9 +13,16 @@ class LoxFunction(
 ) extends LoxCallable:
     def call(interpreter: Interpreter, arguments: List[Any]): Any =
         val environment = Environment(Some(interpreter.globals))
-        for (i <- 0 until declaration.params.size) do environment.define(declaration.params(i).lexeme, arguments(i))
-        interpreter.executeBlock(declaration.body, environment)
+        for (i <- 0 until declaration.params.size) do
+            environment.define(declaration.params(i).lexeme, arguments(i))
+        try interpreter.executeBlock(declaration.body, environment)
+        catch case r: Return => return r.value
+        null
 
-    def arity: Int = declaration.params.size
-
+    override def arity: Int = declaration.params.size
     override def toString: String = s"<fn ${declaration.name.lexeme}>"
+
+class Return(val value: Any) extends RuntimeException:
+    // override def fillInStackTrace(): Throwable = this
+    override def getMessage: String = value.toString
+    override def toString: String = s"Return($value)"
