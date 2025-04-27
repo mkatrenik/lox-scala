@@ -1,8 +1,7 @@
 package lox
 
-final class Environment(enclosing: Option[Environment] = None):
+final class Environment(val enclosing: Option[Environment] = None):
     private val values = scala.collection.mutable.Map[String, Any]()
-    // private val locals = scala.collection.mutable.Map[Expr, Int]()
 
     def define(name: String, value: Any): Unit =
         values(name) = value
@@ -20,3 +19,14 @@ final class Environment(enclosing: Option[Environment] = None):
             enclosing match
                 case Some(env) => env.assign(name, value)
                 case None      => throw RuntimeError(name, s"Undefined variable '${name.lexeme}'.")
+
+    def assignAt(distance: Int, name: Token, value: Any): Unit =
+        ancestor(distance).values.put(name.lexeme, value)
+
+    def getAt(distance: Int, name: String): Any =
+        ancestor(distance).values(name)
+
+    def ancestor(distance: Int): Environment =
+        var env = this
+        for _ <- 0 until distance do env = env.enclosing.get
+        env

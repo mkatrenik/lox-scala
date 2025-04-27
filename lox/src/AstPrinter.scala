@@ -75,17 +75,17 @@ final class AstPrinter extends ExprVisitor[String], StmtVisitor[String]:
     def visitWhileStmt(stmt: Stmt.While): String =
         s"(while ${visit(stmt.condition)} ${visit(stmt.body)})"
 
-    def visitForStmt(stmt: Stmt.For): String =
-        val initializer = stmt.initializer match
-            case None        => ""
-            case Some(value) => s" ${visit(value)}"
-        val condition = stmt.condition match
-            case None        => ""
-            case Some(value) => s" ${visit(value)}"
-        val increment = stmt.increment match
-            case None        => ""
-            case Some(value) => s" ${visit(value)}"
-        s"(for$initializer$condition$increment ${visit(stmt.body)})"
+    // def visitForStmt(stmt: Stmt.For): String =
+    //     val initializer = stmt.initializer match
+    //         case None        => ""
+    //         case Some(value) => s" ${visit(value)}"
+    //     val condition = stmt.condition match
+    //         case None        => ""
+    //         case Some(value) => s" ${visit(value)}"
+    //     val increment = stmt.increment match
+    //         case None        => ""
+    //         case Some(value) => s" ${visit(value)}"
+    //     s"(for$initializer$condition$increment ${visit(stmt.body)})"
 
     def visitFunctionStmt(stmt: Stmt.Function): String =
         val params = stmt.params.map(_.lexeme).mkString(" ")

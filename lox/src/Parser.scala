@@ -28,7 +28,8 @@ final class Parser(tokens: List[Token]):
     private def isAtEnd(): Boolean =
         current >= tokens.length || tokens(current).tokenType == TokenType.EOF
 
-    /** check if the next token is one of the given token types and advance the current token if it is.
+    /** check if the next token is one of the given token types and advance the current token if it
+      * is.
       */
     private def `match`(tokenTypes: TokenType*): Boolean =
         boundary:
@@ -129,16 +130,34 @@ final class Parser(tokens: List[Token]):
             if `match`(TokenType.Semicolon) then None
             else if `match`(TokenType.Var) then Some(varDeclaration())
             else Some(expressionStatement())
-        val condition =
+
+        var condition =
             if check(TokenType.Semicolon) then None
             else Some(expression())
         consume(TokenType.Semicolon, "Expect ';' after loop condition.")
+
         val increment =
             if check(TokenType.RightParen) then None
             else Some(expression())
         consume(TokenType.RightParen, "Expect ')' after for clauses.")
-        val body = statement()
-        Stmt.For(initializer, condition, increment, body)
+
+        var body = statement()
+
+        body = increment match
+            case Some(increment) =>
+                Stmt.Block(List(body, Stmt.Expression(increment)))
+            case None => body
+
+        condition = condition.orElse(Some(Expr.Literal(true)))
+
+        body = Stmt.While(condition.get, body)
+
+        initializer match
+            case Some(initializer) =>
+                body = Stmt.Block(List(initializer, body))
+            case None => ()
+
+        body
 
     private def printStatement(): Stmt =
         val value = expression()
@@ -177,8 +196,8 @@ final class Parser(tokens: List[Token]):
             expr match
                 case Expr.Variable(name) =>
                     return Expr.Assign(name, value)
-                case Expr.Get(objectExpr, name) =>
-                    return Expr.Set(objectExpr, name, value)
+                // case Expr.Get(objectExpr, name) =>
+                //     return Expr.Set(objectExpr, name, value)
                 case _ =>
                     throw error(equals, "Invalid assignment target.")
         expr
@@ -193,7 +212,13 @@ final class Parser(tokens: List[Token]):
 
     private def comparison(): Expr =
         var expr = term()
-        while `match`(TokenType.Greater, TokenType.GreaterEqual, TokenType.Less, TokenType.LessEqual) do
+        while `match`(
+                TokenType.Greater,
+                TokenType.GreaterEqual,
+                TokenType.Less,
+                TokenType.LessEqual
+            )
+        do
             val operator = previous()
             val right = term()
             expr = Expr.Binary(expr, operator, right)
@@ -235,7 +260,8 @@ final class Parser(tokens: List[Token]):
         if !check(TokenType.RightParen) then
             arguments += expression()
             while `match`(TokenType.Comma) do
-                if arguments.length >= 255 then error(peek(), "Cannot have more than 255 arguments.")
+                if arguments.length >= 255 then
+                    error(peek(), "Cannot have more than 255 arguments.")
                 arguments += expression()
         val paren = consume(TokenType.RightParen, "Expect ')' after arguments.")
         Expr.Call(callee, paren, arguments.toList)

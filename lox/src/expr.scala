@@ -1,5 +1,7 @@
 package lox
 
+import java.util.UUID
+
 enum Expr:
     case Assign(name: Token, value: Expr)
     case Binary(left: Expr, operator: Token, right: Expr)
@@ -13,6 +15,9 @@ enum Expr:
     case This(keyword: Token)
     case Unary(operator: Token, right: Expr)
     case Variable(name: Token)
+
+    // used in cases where we need to track individual expressions
+    val uniqueId: UUID = UUID.randomUUID()
 
     def accept[T](visitor: ExprVisitor[T]): T =
         this match

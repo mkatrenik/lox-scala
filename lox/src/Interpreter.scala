@@ -1,12 +1,12 @@
 package lox
 
 import scala.util.Try
-import lox.Stmt.Print
-import lox.Stmt.Expression
+import java.util.UUID
 
 final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     val globals = Environment()
     private var environment = globals
+    val locals = collection.mutable.Map[UUID, Int]()
 
     globals.define(
         "clock",
@@ -24,6 +24,9 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     def evaluate(expr: Expr): Any = expr.accept(this)
     def execute(stmt: Stmt): Unit = stmt.accept(this)
 
+    def resolve(expr: Expr, depth: Int): Unit =
+        locals.update(expr.uniqueId, depth)
+
     def runtimeError(token: Token, message: String): Nothing =
         throw RuntimeError(token, message)
 
@@ -31,11 +34,11 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
         runtimeError(token, "Operands must be two numbers or two strings.")
     def errorNumbers(token: Token) = runtimeError(token, "Operands must be two numbers.")
 
-    def visitExpressionStmt(stmt: Expression): Unit =
+    def visitExpressionStmt(stmt: Stmt.Expression): Unit =
         evaluate(stmt.expression)
         ()
 
-    def visitPrintStmt(stmt: Print): Unit =
+    def visitPrintStmt(stmt: Stmt.Print): Unit =
         val value = evaluate(stmt.expression)
         println(stringify(value))
         ()
@@ -110,11 +113,21 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
 
     def visitAssignExpr(expr: Expr.Assign): Any =
         val value = evaluate(expr.value)
-        environment.assign(expr.name, value)
+        locals.get(expr.uniqueId) match
+            case Some(distance) =>
+                environment.assignAt(distance, expr.name, value)
+            case None =>
+                globals.assign(expr.name, value)
         value
 
     def visitVariableExpr(expr: Expr.Variable): Any =
-        environment.get(expr.name)
+        lookupVariable(expr.name, expr)
+
+    def lookupVariable(name: Token, expr: Expr.Variable): Any =
+        locals.get(expr.uniqueId) match
+            case Some(distance) =>
+                environment.getAt(distance, name.lexeme)
+            case None => globals.get(name)
 
     def visitCallExpr(expr: Expr.Call): Any =
         val callee = evaluate(expr.callee)
@@ -149,19 +162,6 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     def visitWhileStmt(stmt: Stmt.While): Unit =
         while isTruthy(evaluate(stmt.condition)) do execute(stmt.body)
 
-    def visitForStmt(stmt: Stmt.For): Unit =
-        stmt.initializer match
-            case Some(initializer) => execute(initializer)
-            case None              => ()
-        while stmt.condition match
-                case Some(condition) => isTruthy(evaluate(condition))
-                case None            => true
-        do
-            execute(stmt.body)
-            stmt.increment match
-                case Some(increment) => evaluate(increment)
-                case None            => ()
-
     def visitVarStmt(stmt: Stmt.Var): Unit =
         val evaluatedValue = stmt.initializer match
             case None        => null
@@ -175,10 +175,11 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
         val previous = this.environment
         this.environment = environment
         try
-            statements.foreach(execute(_))
-        finally
-            this.environment = previous
-        ()
+            statements.foreach: s =>
+                execute(s)
+        // make sure to ignore throwed Return's
+        catch case e: RuntimeError => print(s"Error in block: ${e.getMessage}")
+        finally this.environment = previous
 
     def visitIfStmt(expr: Stmt.If): Unit =
         if isTruthy(evaluate(expr.condition)) then execute(expr.thenBranch)

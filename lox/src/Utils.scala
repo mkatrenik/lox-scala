@@ -1,8 +1,16 @@
 package lox
+import pprint.pprintln
+import java.util.concurrent.atomic.AtomicInteger
+
+val counter = new AtomicInteger(0)
 
 extension [T](x: T | Null)
     inline def nullToOption: Option[T] =
         Option(x).map(_.nn)
+
+extension [T](x: T)
+    inline def tap: T =
+        pprintln(x); x
 
 trait LoxCallable:
     def call(interpreter: Interpreter, arguments: List[Any]): Any
@@ -13,6 +21,7 @@ class LoxFunction(
     val closure: Environment
 ) extends LoxCallable:
     def call(interpreter: Interpreter, arguments: List[Any]): Any =
+        // pprintln(s"call ${declaration.name.lexeme} with $arguments")
         val environment = Environment(Some(closure))
         for (i <- 0 until declaration.params.size) do
             environment.define(declaration.params(i).lexeme, arguments(i))

@@ -24,7 +24,7 @@ trait StmtVisitor[R]:
     def visitReturnStmt(stmt: Stmt.Return): R
     def visitVarStmt(stmt: Stmt.Var): R
     def visitWhileStmt(stmt: Stmt.While): R
-    def visitForStmt(stmt: Stmt.For): R
+    // def visitForStmt(stmt: Stmt.For): R
     // def visitImportStmt(stmt: Stmt.Import): R
     // def visitImportAllStmt(stmt: Stmt.ImportAll): R
     // def visitImportDefaultStmt(stmt: Stmt.ImportDefault): R

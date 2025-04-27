@@ -2,6 +2,7 @@ package lox
 
 import scala.util.Success
 import scala.util.Failure
+// import pprint.pprintln
 
 class InterpreterTest extends munit.FunSuite:
     test("test print") {
@@ -36,6 +37,7 @@ class InterpreterTest extends munit.FunSuite:
         val tokens = Scanner(source).scanTokens()
         val ast = Parser(tokens).parse().get
         val interpreter = Interpreter()
+        Resolver(interpreter).resolve(ast)
 
         val printer = AstPrinter().toString(ast)
         assertEquals(printer, "(block (var a 1.0) (block (var a 2.0) (print (a))) (print (a)))")
@@ -52,8 +54,7 @@ class InterpreterTest extends munit.FunSuite:
     test("for loop") {
         val source = """
         |{
-        |  var i = 0;
-        |  for (;i < 5; i = i + 1) {
+        |  for (var i = 0;i < 5; i = i + 1) {
         |    print i;
         |  }
         |}
@@ -61,7 +62,10 @@ class InterpreterTest extends munit.FunSuite:
 
         val tokens = Scanner(source).scanTokens()
         val ast = Parser(tokens).parse().get
+
         val interpreter = Interpreter()
+        val resolver = Resolver(interpreter)
+        resolver.resolve(ast)
 
         val outputCapture = new java.io.ByteArrayOutputStream()
 
@@ -84,13 +88,16 @@ class InterpreterTest extends munit.FunSuite:
         |  return count;
         |}
         |var counter = makeCounter();
-        |counter(); // "1".
-        |counter(); // "2".
+        |counter();
+        |counter();
         """.stripMargin
 
         val tokens = Scanner(source).scanTokens()
         val ast = Parser(tokens).parse().get
+        // pprintln(ast)
         val interpreter = Interpreter()
+        val resolver = Resolver(interpreter)
+        resolver.resolve(ast)
 
         val outputCapture = new java.io.ByteArrayOutputStream()
 

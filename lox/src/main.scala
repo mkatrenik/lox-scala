@@ -45,6 +45,10 @@ class Lox:
 
         if Lox.hadError then return
 
+        Resolver(interpreter).resolve(ast.get)
+
+        if Lox.hadError then return
+
         ast.map: statements =>
             interpreter
                 .interpret(statements)

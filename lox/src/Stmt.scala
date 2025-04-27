@@ -10,7 +10,12 @@ enum Stmt:
     case Return(keyword: Token, value: Option[Expr])
     case Var(name: Token, initializer: Option[Expr])
     case While(condition: Expr, body: Stmt)
-    case For(initializer: Option[Stmt], condition: Option[Expr], increment: Option[Expr], body: Stmt)
+    // case For(
+    //     initializer: Option[Stmt],
+    //     condition: Option[Expr],
+    //     increment: Option[Expr],
+    //     body: Stmt
+    // )
     // case Import(name: Token, alias: Option[Token])
     // case ImportAll(name: Token, alias: Option[Token])
     // case ImportDefault(name: Token, alias: Option[Token])
@@ -26,7 +31,7 @@ enum Stmt:
             case r @ Return(_, _)      => visitor.visitReturnStmt(r)
             case v @ Var(_, _)         => visitor.visitVarStmt(v)
             case w @ While(_, _)       => visitor.visitWhileStmt(w)
-            case f @ For(_, _, _, _)   => visitor.visitForStmt(f)
+            // case f @ For(_, _, _, _)   => visitor.visitForStmt(f)
             // case i @ Import(_, _)      => visitor.visitImportStmt(i)
             // case i @ ImportAll(_, _)   => visitor.visitImportAllStmt(i)
             // case i @ ImportDefault(_, _) =>

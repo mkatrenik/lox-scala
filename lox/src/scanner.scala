@@ -19,7 +19,13 @@ enum TokenType:
         // End of file
         EOF
 
-case class Token(tokenType: TokenType, lexeme: String, literal: Any, line: Int)
+case class Token(
+    tokenType: TokenType,
+    lexeme: String,
+    literal: Any,
+    line: Int
+)
+
 object Token:
     def apply(tokenType: TokenType): Token = Token(tokenType, "", null, 0)
 
