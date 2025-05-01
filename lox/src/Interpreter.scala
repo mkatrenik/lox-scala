@@ -154,8 +154,23 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
                 else left
             case _ => throw new RuntimeError(expr.operator, "Invalid logical operator.")
 
-    def visitSetExpr(expr: Expr.Set): Any = ???
-    def visitGetExpr(expr: Expr.Get): Any = ???
+    def visitSetExpr(expr: Expr.Set): Any =
+        val objectExpr = evaluate(expr.objectExpr)
+        objectExpr match
+            case instance: LoxInstance =>
+                val value = evaluate(expr.value)
+                instance.set(expr.name, value)
+                value
+            case _ =>
+                runtimeError(expr.name, "Only instances have properties.")
+
+    def visitGetExpr(expr: Expr.Get): Any =
+        val objectExpr = evaluate(expr.objectExpr)
+        objectExpr match
+            case instance: LoxInstance =>
+                instance.get(expr.name)
+            case _ =>
+                runtimeError(expr.name, "Only instances have properties.")
     def visitThisExpr(expr: Expr.This): Any = ???
     def visitSuperExpr(expr: Expr.Super): Any = ???
 

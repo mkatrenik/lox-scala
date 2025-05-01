@@ -52,10 +52,11 @@ class LoxInstance(val klass: LoxClass):
     def get(name: Token): Any =
         fields.get(name.lexeme) match
             case Some(value) => value
-            case None        =>
-                // val method = klass.findMethod(name.lexeme)
-                // method.map(_.bind(this))
-                null
+            case None =>
+                throw RuntimeError(
+                    name,
+                    s"Undefined property '${name.lexeme}'."
+                )
 
     def set(name: Token, value: Any): Unit =
         fields.update(name.lexeme, value)

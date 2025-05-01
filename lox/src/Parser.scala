@@ -208,8 +208,8 @@ final class Parser(tokens: List[Token]):
             expr match
                 case Expr.Variable(name) =>
                     return Expr.Assign(name, value)
-                // case Expr.Get(objectExpr, name) =>
-                //     return Expr.Set(objectExpr, name, value)
+                case Expr.Get(objectExpr, name) =>
+                    return Expr.Set(objectExpr, name, value)
                 case _ =>
                     throw error(equals, "Invalid assignment target.")
         expr
@@ -264,6 +264,9 @@ final class Parser(tokens: List[Token]):
         boundary:
             while true do
                 if `match`(TokenType.LeftParen) then expr = finishCall(expr)
+                else if `match`(TokenType.Dot) then
+                    val name = consume(TokenType.Identifier, "Expect property name after '.'.")
+                    expr = Expr.Get(expr, name)
                 else break()
         expr
 

@@ -117,6 +117,8 @@ class InterpreterTest extends munit.FunSuite:
         |}
         |var foo = Foo();
         |print foo;
+        |foo.baz = 1;
+        |print foo.baz;
         """.stripMargin
 
         val tokens = Scanner(source).scanTokens()
@@ -131,6 +133,6 @@ class InterpreterTest extends munit.FunSuite:
         Console.withOut(outputCapture) {
             interpreter.interpret(ast) match
                 case Failure(e) => fail(s"Unexpected interpretation error: ${e.getMessage}")
-                case Success(_) => assertEquals(outputCapture.toString.trim, "<instance Foo>")
+                case Success(_) => assertEquals(outputCapture.toString.trim, "<instance Foo>\n1.0")
         }
     }
