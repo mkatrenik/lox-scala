@@ -124,6 +124,10 @@ final class Resolver(interpreter: Interpreter) extends ExprVisitor[Unit], StmtVi
         resolve(expr.value)
         resolveLocal(expr, expr.name)
 
+    def visitClassStmt(stmt: Stmt.Class): Unit =
+        declare(stmt.name)
+        define(stmt.name)
+
     def visitGetExpr(expr: Expr.Get): Unit = ???
     def visitSetExpr(expr: Expr.Set): Unit = ???
     def visitThisExpr(expr: Expr.This): Unit = ???

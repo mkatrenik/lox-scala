@@ -2,7 +2,7 @@ package lox
 
 import scala.util.Success
 import scala.util.Failure
-// import pprint.pprintln
+import pprint.pprintln
 
 class InterpreterTest extends munit.FunSuite:
     test("test print") {
@@ -105,5 +105,32 @@ class InterpreterTest extends munit.FunSuite:
             interpreter.interpret(ast) match
                 case Failure(e) => fail(s"Unexpected interpretation error: ${e.getMessage}")
                 case Success(_) => assertEquals(outputCapture.toString.trim, "1.0\n2.0")
+        }
+    }
+
+    test("class declaration") {
+        val source = """
+        |class Foo {
+        |  bar() {
+        |    print "Hello from Foo!";
+        |  }
+        |}
+        |var foo = Foo();
+        |print foo;
+        """.stripMargin
+
+        val tokens = Scanner(source).scanTokens()
+        val ast = Parser(tokens).parse().get
+        // pprintln(ast)
+        val interpreter = Interpreter()
+        val resolver = Resolver(interpreter)
+        resolver.resolve(ast)
+
+        val outputCapture = new java.io.ByteArrayOutputStream()
+
+        Console.withOut(outputCapture) {
+            interpreter.interpret(ast) match
+                case Failure(e) => fail(s"Unexpected interpretation error: ${e.getMessage}")
+                case Success(_) => assertEquals(outputCapture.toString.trim, "<instance Foo>")
         }
     }

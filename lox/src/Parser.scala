@@ -57,12 +57,24 @@ final class Parser(tokens: List[Token]):
         else tokens(current)
 
     private def declaration(): Stmt =
-        // if `match`(TokenType.Class) then classDeclaration()
-        if `match`(TokenType.Fun) then funDeclaration("function")
+        if `match`(TokenType.Class) then classDeclaration()
+        else if `match`(TokenType.Fun) then funDeclaration("function")
         else if `match`(TokenType.Var) then varDeclaration()
         else statement()
 
-    private def funDeclaration(kind: "function"): Stmt =
+    private def classDeclaration(): Stmt =
+        val name = consume(TokenType.Identifier, "Expect class name.")
+        // var superclass: Option[Expr.Variable] = None
+        // if `match`(TokenType.Less) then
+        //     consume(TokenType.Identifier, "Expect superclass name.")
+        //     superclass = Some(Expr.Variable(previous()))
+        consume(TokenType.LeftBrace, "Expect '{' before class body.")
+        val methods = scala.collection.mutable.ArrayBuffer[Stmt.Function]()
+        while !check(TokenType.RightBrace) && !isAtEnd() do methods += funDeclaration("method")
+        consume(TokenType.RightBrace, "Expect '}' after class body.")
+        Stmt.Class(name, methods.toList)
+
+    private def funDeclaration(kind: "function" | "method"): Stmt.Function =
         val name = consume(TokenType.Identifier, s"Expect $kind name.")
         consume(TokenType.LeftParen, s"Expect '(' after name.")
         val arguments = scala.collection.mutable.ArrayBuffer[Token]()

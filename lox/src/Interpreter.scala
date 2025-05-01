@@ -198,6 +198,11 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
             case None        => null
         throw Return(value)
 
+    def visitClassStmt(stmt: Stmt.Class): Unit =
+        environment.define(stmt.name.lexeme, null)
+        val klass = LoxClass(stmt.name.lexeme)
+        environment.assign(stmt.name, klass)
+
 def isTruthy(value: Any): Boolean =
     value match
         case null       => false

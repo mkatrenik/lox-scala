@@ -98,5 +98,9 @@ final class AstPrinter extends ExprVisitor[String], StmtVisitor[String]:
             case Some(value) => s" ${visit(value)}"
         s"(return$value)"
 
+    def visitClassStmt(stmt: Stmt.Class): String =
+        val methods = stmt.methods.map(visit).mkString(" ")
+        s"(class ${stmt.name.lexeme} $methods)"
+
 object AstPrinter:
     def print(expr: Expr): String = AstPrinter().visit(expr)

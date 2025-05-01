@@ -32,6 +32,36 @@ class LoxFunction(
     override def arity: Int = declaration.params.size
     override def toString: String = s"<fn ${declaration.name.lexeme}>"
 
+class LoxClass(
+    val name: String
+    // val superclass: Option[LoxClass],
+    // val methods: Map[String, LoxFunction]
+) extends LoxCallable:
+    def call(interpreter: Interpreter, arguments: List[Any]): Any =
+        val instance = LoxInstance(this)
+        // val initializer = findMethod("init")
+        // initializer.map(_.bind(instance).call(interpreter, arguments))
+        instance
+
+    override def toString: String = s"<class $name>"
+    override def arity: Int = 0
+
+class LoxInstance(val klass: LoxClass):
+    private val fields = collection.mutable.Map[String, Any]()
+
+    def get(name: Token): Any =
+        fields.get(name.lexeme) match
+            case Some(value) => value
+            case None        =>
+                // val method = klass.findMethod(name.lexeme)
+                // method.map(_.bind(this))
+                null
+
+    def set(name: Token, value: Any): Unit =
+        fields.update(name.lexeme, value)
+
+    override def toString: String = s"<instance ${klass.name}>"
+
 class Return(val value: Any) extends RuntimeException:
     // override def fillInStackTrace(): Throwable = this
     override def getMessage: String = value.toString
