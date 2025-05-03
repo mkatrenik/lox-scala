@@ -2,7 +2,7 @@ package lox
 
 import scala.util.Success
 import scala.util.Failure
-import pprint.pprintln
+// import pprint.pprintln
 
 class InterpreterTest extends munit.FunSuite:
     test("test print") {
@@ -16,10 +16,13 @@ class InterpreterTest extends munit.FunSuite:
 
         val printer = AstPrinter().toString(ast)
         assertEquals(printer, "(print (+ 1.0 2.0))")
+        val outputCapture = new java.io.ByteArrayOutputStream()
 
-        interpreter.interpret(ast) match
-            case Failure(e) => fail(s"Unexpected interpretation error: ${e.getMessage}")
-            case Success(_) => ()
+        Console.withOut(outputCapture) {
+            interpreter.interpret(ast) match
+                case Failure(e) => fail(s"Unexpected interpretation error: ${e.getMessage}")
+                case Success(_) => assertEquals(outputCapture.toString.trim, "3.0")
+        }
     }
 
     test("scopes") {
@@ -134,5 +137,35 @@ class InterpreterTest extends munit.FunSuite:
             interpreter.interpret(ast) match
                 case Failure(e) => fail(s"Unexpected interpretation error: ${e.getMessage}")
                 case Success(_) => assertEquals(outputCapture.toString.trim, "<instance Foo>\n1.0")
+        }
+    }
+
+    test("this") {
+        val source = """
+        |class Bacon {
+        |    init() {
+        |        this.foo = 33;
+        |    }
+        |    eat() {
+        |        print this.foo;
+        |    }
+        |}
+        |var b = Bacon();
+        |b.eat();
+        """.stripMargin
+
+        val tokens = Scanner(source).scanTokens()
+        val ast = Parser(tokens).parse().get
+        // pprintln(ast)
+        val interpreter = Interpreter()
+        val resolver = Resolver(interpreter)
+        resolver.resolve(ast)
+
+        val outputCapture = new java.io.ByteArrayOutputStream()
+
+        Console.withOut(outputCapture) {
+            interpreter.interpret(ast) match
+                case Failure(e) => fail(s"Unexpected interpretation error: ${e}")
+                case Success(_) => assertEquals(outputCapture.toString.trim, "33.0")
         }
     }

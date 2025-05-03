@@ -3,12 +3,9 @@ package lox
 import collection.mutable.{Map, Stack}
 import scala.util.boundary, boundary.break
 
-enum FunctionType:
-    case None, Function, Initializer, Method
-
 final class Resolver(interpreter: Interpreter) extends ExprVisitor[Unit], StmtVisitor[Unit]:
     private var currentFunction = FunctionType.None
-    // private var currentClass = ClassType.None
+    private var currentClass = ClassType.None
     val scopes = Stack[Map[String, Boolean]]()
 
     def resolve(expr: Expr): Unit =
@@ -81,7 +78,9 @@ final class Resolver(interpreter: Interpreter) extends ExprVisitor[Unit], StmtVi
     def visitReturnStmt(stmt: Stmt.Return): Unit =
         if currentFunction == FunctionType.None then
             Lox.error(stmt.keyword, "Cannot return from top-level code.")
-        stmt.value.foreach(resolve(_))
+        else if currentFunction == FunctionType.Initializer then
+            Lox.error(stmt.keyword, "Cannot return a value from an initializer.")
+        else stmt.value.foreach(resolve(_))
 
     def visitBinaryExpr(expr: Expr.Binary): Unit =
         resolve(expr.left)
@@ -128,6 +127,20 @@ final class Resolver(interpreter: Interpreter) extends ExprVisitor[Unit], StmtVi
         declare(stmt.name)
         define(stmt.name)
 
+        val enclosingClass = currentClass
+        currentClass = ClassType.Class
+
+        beginScope()
+        scopes.top.addOne("this" -> true)
+
+        stmt.methods.foreach: method =>
+            val declaration =
+                if method.name.lexeme == "init" then FunctionType.Initializer
+                else FunctionType.Method
+            resolveFunction(method, declaration)
+        endScope()
+        currentClass = enclosingClass
+
     def visitGetExpr(expr: Expr.Get): Unit =
         resolve(expr.objectExpr)
 
@@ -135,5 +148,9 @@ final class Resolver(interpreter: Interpreter) extends ExprVisitor[Unit], StmtVi
         resolve(expr.value)
         resolve(expr.objectExpr)
 
-    def visitThisExpr(expr: Expr.This): Unit = ???
+    def visitThisExpr(expr: Expr.This): Unit =
+        if currentClass == ClassType.None then
+            Lox.error(expr.keyword, "Cannot use 'this' outside of a class.")
+        else resolveLocal(expr, expr.keyword)
+
     def visitSuperExpr(expr: Expr.Super): Unit = ???

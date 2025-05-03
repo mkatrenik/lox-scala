@@ -76,6 +76,8 @@ object Lox:
         println(s"[line $line] Error: $where: $message")
 
 @main def run(args: String*) =
+    // Lox().runFile("test.lox")
+    // throw new RuntimeException("Test failed")
     if args.length > 1 then println("Usage: lox [script]")
     else if args.length == 1 then
         val fileName = args(0)

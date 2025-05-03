@@ -58,7 +58,7 @@ final class Parser(tokens: List[Token]):
 
     private def declaration(): Stmt =
         if `match`(TokenType.Class) then classDeclaration()
-        else if `match`(TokenType.Fun) then funDeclaration("function")
+        else if `match`(TokenType.Fun) then funDeclaration(FunctionType.Function)
         else if `match`(TokenType.Var) then varDeclaration()
         else statement()
 
@@ -70,11 +70,14 @@ final class Parser(tokens: List[Token]):
         //     superclass = Some(Expr.Variable(previous()))
         consume(TokenType.LeftBrace, "Expect '{' before class body.")
         val methods = scala.collection.mutable.ArrayBuffer[Stmt.Function]()
-        while !check(TokenType.RightBrace) && !isAtEnd() do methods += funDeclaration("method")
+        while !check(TokenType.RightBrace) && !isAtEnd() do
+            methods += funDeclaration(FunctionType.Method)
         consume(TokenType.RightBrace, "Expect '}' after class body.")
         Stmt.Class(name, methods.toList)
 
-    private def funDeclaration(kind: "function" | "method"): Stmt.Function =
+    private def funDeclaration(
+        kind: FunctionType.Function.type | FunctionType.Method.type
+    ): Stmt.Function =
         val name = consume(TokenType.Identifier, s"Expect $kind name.")
         consume(TokenType.LeftParen, s"Expect '(' after name.")
         val arguments = scala.collection.mutable.ArrayBuffer[Token]()
@@ -298,7 +301,7 @@ final class Parser(tokens: List[Token]):
         //     consume(TokenType.Dot, "Expect '.' after 'super'.")
         //     val method = consume(TokenType.Identifier, "Expect superclass method name.")
         //     Expr.Super(keyword, method)
-        // else if matchToken(TokenType.This) then Expr.This(previous())
+        else if `match`(TokenType.This) then Expr.This(previous())
         else throw error(peek(), "Expect expression.")
 
     private def consume(tokenType: TokenType, message: String): Token =

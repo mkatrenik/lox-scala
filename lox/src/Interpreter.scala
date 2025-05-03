@@ -2,6 +2,7 @@ package lox
 
 import scala.util.Try
 import java.util.UUID
+// import pprint.pprintln
 
 final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     val globals = Environment()
@@ -20,6 +21,10 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     def interpret(statements: List[Stmt]): Try[Unit] =
         Try:
             statements.foreach(execute(_))
+        // .recover { case e: Throwable =>
+        //     println(s"Runtime error: ${e.getMessage}")
+        //     e
+        // }
 
     def evaluate(expr: Expr): Any = expr.accept(this)
     def execute(stmt: Stmt): Unit = stmt.accept(this)
@@ -41,7 +46,6 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     def visitPrintStmt(stmt: Stmt.Print): Unit =
         val value = evaluate(stmt.expression)
         println(stringify(value))
-        ()
 
     def visitLiteralExpr(expr: Expr.Literal): Any = expr.value.asInstanceOf[Any]
     def visitGroupingExpr(expr: Expr.Grouping): Any = evaluate(expr.expression)
@@ -123,7 +127,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     def visitVariableExpr(expr: Expr.Variable): Any =
         lookupVariable(expr.name, expr)
 
-    def lookupVariable(name: Token, expr: Expr.Variable): Any =
+    def lookupVariable(name: Token, expr: Expr): Any =
         locals.get(expr.uniqueId) match
             case Some(distance) =>
                 environment.getAt(distance, name.lexeme)
@@ -171,7 +175,10 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
                 instance.get(expr.name)
             case _ =>
                 runtimeError(expr.name, "Only instances have properties.")
-    def visitThisExpr(expr: Expr.This): Any = ???
+
+    def visitThisExpr(expr: Expr.This): Any =
+        lookupVariable(expr.keyword, expr)
+
     def visitSuperExpr(expr: Expr.Super): Any = ???
 
     def visitWhileStmt(stmt: Stmt.While): Unit =
@@ -204,7 +211,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
                 case None             => ()
 
     def visitFunctionStmt(stmt: Stmt.Function): Unit =
-        val function = LoxFunction(stmt, environment)
+        val function = LoxFunction(stmt, environment, false)
         environment.define(stmt.name.lexeme, function)
 
     def visitReturnStmt(stmt: Stmt.Return): Unit =
@@ -215,7 +222,14 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
 
     def visitClassStmt(stmt: Stmt.Class): Unit =
         environment.define(stmt.name.lexeme, null)
-        val klass = LoxClass(stmt.name.lexeme)
+
+        val methods = stmt.methods.map { method =>
+            val isInitializer = method.name.lexeme == "init"
+            val function = LoxFunction(method, environment, isInitializer)
+            method.name.lexeme -> function
+        }.toMap
+
+        val klass = LoxClass(stmt.name.lexeme, methods)
         environment.assign(stmt.name, klass)
 
 def isTruthy(value: Any): Boolean =
