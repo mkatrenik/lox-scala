@@ -23,6 +23,7 @@ final class Environment(val enclosing: Option[Environment] = None):
     def assignAt(distance: Int, name: Token, value: Any): Unit =
         ancestor(distance).values.put(name.lexeme, value)
 
+    @throws(classOf[NoSuchElementException])
     def getAt(distance: Int, name: String): Any =
         ancestor(distance).values(name)
 

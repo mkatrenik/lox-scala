@@ -179,7 +179,24 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
     def visitThisExpr(expr: Expr.This): Any =
         lookupVariable(expr.keyword, expr)
 
-    def visitSuperExpr(expr: Expr.Super): Any = ???
+    def visitSuperExpr(expr: Expr.Super): Any =
+        val method = locals
+            .get(expr.uniqueId)
+            .flatMap: distance =>
+                val superclass = environment.getAt(distance, "super").asInstanceOf[LoxClass]
+                val instance = environment.getAt(distance - 1, "this").asInstanceOf[LoxInstance]
+                println(s"superclass: $superclass")
+                println(s"instance: $instance")
+                superclass
+                    .findMethod(expr.method.lexeme)
+                    .map(_.bind(instance))
+            .getOrElse(
+                runtimeError(
+                    expr.method,
+                    "Undefined property '" + expr.method.lexeme + "'."
+                )
+            )
+        method
 
     def visitWhileStmt(stmt: Stmt.While): Unit =
         while isTruthy(evaluate(stmt.condition)) do execute(stmt.body)
@@ -221,7 +238,20 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
         throw Return(value)
 
     def visitClassStmt(stmt: Stmt.Class): Unit =
+        val superclass = stmt.superclass.map: superclass =>
+            val superclassValue = evaluate(superclass)
+            if !superclassValue.isInstanceOf[LoxClass] then
+                runtimeError(
+                    superclass.name,
+                    "Superclass must be a class."
+                )
+            superclassValue.asInstanceOf[LoxClass]
+
         environment.define(stmt.name.lexeme, null)
+
+        superclass.foreach: superclass =>
+            environment = Environment(Some(environment))
+            environment.define("super", superclass)
 
         val methods = stmt.methods.map { method =>
             val isInitializer = method.name.lexeme == "init"
@@ -229,7 +259,11 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
             method.name.lexeme -> function
         }.toMap
 
-        val klass = LoxClass(stmt.name.lexeme, methods)
+        val klass = LoxClass(stmt.name.lexeme, superclass, methods)
+
+        superclass.foreach: _ =>
+            environment = environment.enclosing.get
+
         environment.assign(stmt.name, klass)
 
 def isTruthy(value: Any): Boolean =

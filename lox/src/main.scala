@@ -52,9 +52,7 @@ class Lox:
         ast.map: statements =>
             interpreter
                 .interpret(statements)
-                .recover:
-                    case err: RuntimeError =>
-                        Lox.error(err)
+                .recover(Lox.error(_))
 
 object Lox:
     var hadError = false
@@ -70,6 +68,10 @@ object Lox:
     def error(err: RuntimeError): Unit =
         hadRuntimeError = true
         Lox.reportError(err.token.line, "", err.message)
+
+    def error(err: Throwable): Unit =
+        hadRuntimeError = true
+        Lox.reportError(0, "", err.getMessage)
 
     def reportError(line: Int, where: String, message: String): Unit =
         hadError = true

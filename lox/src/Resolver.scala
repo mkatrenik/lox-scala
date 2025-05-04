@@ -124,11 +124,21 @@ final class Resolver(interpreter: Interpreter) extends ExprVisitor[Unit], StmtVi
         resolveLocal(expr, expr.name)
 
     def visitClassStmt(stmt: Stmt.Class): Unit =
+        val enclosingClass = currentClass
+        currentClass = ClassType.Class
+
         declare(stmt.name)
         define(stmt.name)
 
-        val enclosingClass = currentClass
-        currentClass = ClassType.Class
+        stmt.superclass.foreach: superclass =>
+            if stmt.name.lexeme == superclass.name.lexeme then
+                Lox.error(superclass.name, "A class cannot inherit from itself.")
+
+            currentClass = ClassType.Subclass
+            resolve(superclass)
+
+            beginScope()
+            scopes.top.addOne("super" -> true)
 
         beginScope()
         scopes.top.addOne("this" -> true)
@@ -138,7 +148,9 @@ final class Resolver(interpreter: Interpreter) extends ExprVisitor[Unit], StmtVi
                 if method.name.lexeme == "init" then FunctionType.Initializer
                 else FunctionType.Method
             resolveFunction(method, declaration)
+
         endScope()
+        if stmt.superclass.isDefined then endScope()
         currentClass = enclosingClass
 
     def visitGetExpr(expr: Expr.Get): Unit =
@@ -153,4 +165,9 @@ final class Resolver(interpreter: Interpreter) extends ExprVisitor[Unit], StmtVi
             Lox.error(expr.keyword, "Cannot use 'this' outside of a class.")
         else resolveLocal(expr, expr.keyword)
 
-    def visitSuperExpr(expr: Expr.Super): Unit = ???
+    def visitSuperExpr(expr: Expr.Super): Unit =
+        if currentClass == ClassType.None then
+            Lox.error(expr.keyword, "Cannot use 'super' outside of a class.")
+        else if currentClass != ClassType.Subclass then
+            Lox.error(expr.keyword, "Cannot use 'super' in a class with no superclass.")
+        else resolveLocal(expr, expr.keyword)

@@ -2,7 +2,7 @@ package lox
 
 enum Stmt:
     case Block(statements: List[Stmt])
-    case Class(name: Token, methods: List[Function])
+    case Class(name: Token, superclass: Option[Expr.Variable], methods: List[Function])
     case Expression(expression: Expr)
     case Function(name: Token, params: List[Token], body: List[Stmt])
     case If(condition: Expr, thenBranch: Stmt, elseBranch: Option[Stmt])
@@ -23,7 +23,7 @@ enum Stmt:
     def accept[T](visitor: StmtVisitor[T]): T =
         this match
             case b @ Block(_)          => visitor.visitBlockStmt(b)
-            case c @ Class(_, _)       => visitor.visitClassStmt(c)
+            case c @ Class(_, _, _)    => visitor.visitClassStmt(c)
             case e @ Expression(_)     => visitor.visitExpressionStmt(e)
             case f @ Function(_, _, _) => visitor.visitFunctionStmt(f)
             case i @ If(_, _, _)       => visitor.visitIfStmt(i)

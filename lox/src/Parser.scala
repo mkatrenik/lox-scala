@@ -64,16 +64,16 @@ final class Parser(tokens: List[Token]):
 
     private def classDeclaration(): Stmt =
         val name = consume(TokenType.Identifier, "Expect class name.")
-        // var superclass: Option[Expr.Variable] = None
-        // if `match`(TokenType.Less) then
-        //     consume(TokenType.Identifier, "Expect superclass name.")
-        //     superclass = Some(Expr.Variable(previous()))
+        var superclass: Option[Expr.Variable] = None
+        if `match`(TokenType.Less) then
+            consume(TokenType.Identifier, "Expect superclass name.")
+            superclass = Some(Expr.Variable(previous()))
         consume(TokenType.LeftBrace, "Expect '{' before class body.")
         val methods = scala.collection.mutable.ArrayBuffer[Stmt.Function]()
         while !check(TokenType.RightBrace) && !isAtEnd() do
             methods += funDeclaration(FunctionType.Method)
         consume(TokenType.RightBrace, "Expect '}' after class body.")
-        Stmt.Class(name, methods.toList)
+        Stmt.Class(name, superclass, methods.toList)
 
     private def funDeclaration(
         kind: FunctionType.Function.type | FunctionType.Method.type
@@ -296,11 +296,11 @@ final class Parser(tokens: List[Token]):
             consume(TokenType.RightParen, "Expect ')' after expression.")
             Expr.Grouping(expr)
         else if `match`(TokenType.Identifier) then Expr.Variable(previous())
-        // else if matchToken(TokenType.Super) then
-        //     val keyword = previous()
-        //     consume(TokenType.Dot, "Expect '.' after 'super'.")
-        //     val method = consume(TokenType.Identifier, "Expect superclass method name.")
-        //     Expr.Super(keyword, method)
+        else if `match`(TokenType.Super) then
+            val keyword = previous()
+            consume(TokenType.Dot, "Expect '.' after 'super'.")
+            val method = consume(TokenType.Identifier, "Expect superclass method name.")
+            Expr.Super(keyword, method)
         else if `match`(TokenType.This) then Expr.This(previous())
         else throw error(peek(), "Expect expression.")
 

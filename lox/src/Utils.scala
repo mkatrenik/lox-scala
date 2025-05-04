@@ -16,7 +16,7 @@ enum FunctionType:
     case None, Function, Initializer, Method
 
 enum ClassType:
-    case None, Class
+    case None, Class, Subclass
 
 trait LoxCallable:
     def call(interpreter: Interpreter, arguments: List[Any]): Any
@@ -49,7 +49,7 @@ class LoxFunction(
 
 class LoxClass(
     val name: String,
-    // val superclass: Option[LoxClass],
+    val superclass: Option[LoxClass],
     val methods: Map[String, LoxFunction]
 ) extends LoxCallable:
     def call(interpreter: Interpreter, arguments: List[Any]): Any =
@@ -58,8 +58,12 @@ class LoxClass(
         initializer.map(_.bind(instance).call(interpreter, arguments))
         instance
 
-    private def findMethod(name: String): Option[LoxFunction] =
-        methods.get(name)
+    def findMethod(name: String): Option[LoxFunction] =
+        methods
+            .get(name)
+            .orElse(
+                superclass.flatMap(_.findMethod(name))
+            )
 
     override def toString: String = s"<class $name>"
     override def arity: Int =
@@ -72,7 +76,7 @@ class LoxInstance(val klass: LoxClass):
         fields.get(name.lexeme) match
             case Some(value) => value
             case None =>
-                klass.methods.get(name.lexeme) match
+                klass.findMethod(name.lexeme) match
                     case Some(method) => method.bind(this)
                     case None =>
                         throw RuntimeError(
