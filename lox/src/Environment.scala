@@ -4,6 +4,7 @@ final class Environment(val enclosing: Option[Environment] = None):
     private val values = scala.collection.mutable.Map[String, Any]()
 
     def define(name: String, value: Any): Unit =
+        // println(s"define: $name = $value")
         values(name) = value
 
     def get(name: Token): Any =

@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "lox-metals": {
+      "url": "http://localhost:52429/sse",
+      "type": "sse"
+    }
+  }
+}

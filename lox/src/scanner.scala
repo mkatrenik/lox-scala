@@ -22,12 +22,13 @@ enum TokenType:
 case class Token(
     tokenType: TokenType,
     lexeme: String,
-    literal: Any,
+    literal: Option[Token.Literal],
     line: Int
 )
 
 object Token:
-    def apply(tokenType: TokenType): Token = Token(tokenType, "", null, 0)
+    type Literal = String | Double
+    def apply(tokenType: TokenType): Token = Token(tokenType, "", None, 0)
 
 final class Scanner(val source: String):
     val tokens = mutable.ListBuffer[Token]()
@@ -45,7 +46,7 @@ final class Scanner(val source: String):
             start = current
             scanToken()
 
-        tokens += Token(TokenType.EOF, "", null, line)
+        tokens += Token(TokenType.EOF, "", None, line)
         tokens.toList
 
     private def scanToken(): Unit =
@@ -94,7 +95,8 @@ final class Scanner(val source: String):
         current += 1
         c
 
-    private def addToken(tokenType: TokenType, literal: Any = null): Unit =
+    private def addToken(tokenType: TokenType, literal: Option[Token.Literal] = None): Unit =
+        println(s"adding token: $tokenType, $literal")
         tokens += Token(tokenType, source.substring(start, current), literal, line)
 
     private def `match`(expected: Char): Boolean =
@@ -119,7 +121,7 @@ final class Scanner(val source: String):
         advance()
         // The closing quote is not included in the string literal.
         val value = source.substring(start + 1, current - 1)
-        addToken(TokenType.String, value)
+        addToken(TokenType.String, value.nullToOption)
 
     private def number(): Unit =
         while peek().isDigit do advance()
@@ -128,7 +130,7 @@ final class Scanner(val source: String):
             // Consume the "."
             advance()
             while peek().isDigit do advance()
-        addToken(TokenType.Number, source.substring(start, current).toDouble)
+        addToken(TokenType.Number, source.substring(start, current).nullToOption.map(_.toDouble))
 
     private def identifier(): Unit =
         while peek().isAlphaNumeric do advance()

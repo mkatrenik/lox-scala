@@ -57,22 +57,28 @@ class ParserTest extends munit.FunSuite:
             ast,
             List(
                 Stmt.Var(
-                    Token(TokenType.Identifier, "x", null, 2),
-                    Some(Expr.Literal(123.45))
+                    Token(TokenType.Identifier, "x", None, 2),
+                    Some(Expr.Literal(Some(123.45)))
                 ),
                 Stmt.Var(
-                    Token(TokenType.Identifier, "y", null, 3),
-                    Some(Expr.Binary(Expr.Literal(1), Token(TokenType.Plus, "+", null, 3), Expr.Literal(1)))
+                    Token(TokenType.Identifier, "y", None, 3),
+                    Some(
+                        Expr.Binary(
+                            Expr.Literal(Some(1)),
+                            Token(TokenType.Plus, "+", None, 3),
+                            Expr.Literal(Some(1))
+                        )
+                    )
                 ),
                 Stmt.Var(
-                    Token(TokenType.Identifier, "z", null, 4),
+                    Token(TokenType.Identifier, "z", None, 4),
                     Some(
                         Expr.Binary(
                             Expr.Variable(
-                                Token(TokenType.Identifier, "x", null, 4)
+                                Token(TokenType.Identifier, "x", None, 4)
                             ),
-                            Token(TokenType.Plus, "+", null, 4),
-                            Expr.Literal(1)
+                            Token(TokenType.Plus, "+", None, 4),
+                            Expr.Literal(Some(1))
                         )
                     )
                 )
