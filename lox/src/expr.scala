@@ -1,6 +1,9 @@
 package lox
 
-import java.util.UUID
+object Expr:
+    opaque type UniqueId = Int
+    object UniqueId:
+        def apply(id: Int): UniqueId = id
 
 enum Expr:
     case Assign(name: Token, value: Expr)
@@ -8,7 +11,7 @@ enum Expr:
     case Call(callee: Expr, paren: Token, arguments: List[Expr])
     case Get(objectExpr: Expr, name: Token)
     case Grouping(expression: Expr)
-    case Literal(value: Any)
+    case Literal(value: LoxLiteral)
     case Logical(left: Expr, operator: Token, right: Expr)
     case Set(objectExpr: Expr, name: Token, value: Expr)
     case Super(keyword: Token, method: Token)
@@ -17,7 +20,8 @@ enum Expr:
     case Variable(name: Token)
 
     // used in cases where we need to track individual expressions
-    val uniqueId: UUID = UUID.randomUUID()
+    // (e.g. to emulate references)
+    val uniqueId: Expr.UniqueId = Expr.UniqueId(System.identityHashCode(this))
 
     def accept[T](visitor: ExprVisitor[T]): T =
         this match

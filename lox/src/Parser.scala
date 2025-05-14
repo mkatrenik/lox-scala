@@ -287,10 +287,14 @@ final class Parser(tokens: List[Token]):
     private def primary(): Expr =
         if `match`(TokenType.False) then Expr.Literal(false)
         else if `match`(TokenType.True) then Expr.Literal(true)
-        else if `match`(TokenType.Nil) then Expr.Literal(null)
+        else if `match`(TokenType.Nil) then Expr.Literal(Nil)
         else if `match`(TokenType.Number, TokenType.String) then
             val value = previous().literal
-            Expr.Literal(value)
+            value
+                .map(Expr.Literal(_))
+                .getOrElse(
+                    throw error(previous(), "Expect literal value.")
+                )
         else if `match`(TokenType.LeftParen) then
             val expr = expression()
             consume(TokenType.RightParen, "Expect ')' after expression.")

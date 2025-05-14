@@ -1,16 +1,17 @@
 package lox
 import pprint.pprintln
-import java.util.concurrent.atomic.AtomicInteger
 
-val counter = new AtomicInteger(0)
-
-extension [T](x: T | Null)
+extension [T](x: T)
     inline def nullToOption: Option[T] =
         Option(x).map(_.nn)
 
 extension [T](x: T)
     inline def tap: T =
         pprintln(x); x
+
+object Nil
+type LoxLiteral = Double | String | Boolean | Nil.type
+type LoxAny = LoxLiteral | LoxInstance | LoxCallable | Unit
 
 enum FunctionType:
     case None, Function, Initializer, Method
@@ -19,7 +20,7 @@ enum ClassType:
     case None, Class, Subclass
 
 trait LoxCallable:
-    def call(interpreter: Interpreter, arguments: List[Any]): Any
+    def call(interpreter: Interpreter, arguments: List[LoxAny]): LoxAny
     def arity: Int
 
 class LoxFunction(
@@ -27,7 +28,7 @@ class LoxFunction(
     val closure: Environment,
     val isInitializer: Boolean
 ) extends LoxCallable:
-    def call(interpreter: Interpreter, arguments: List[Any]): Any =
+    def call(interpreter: Interpreter, arguments: List[LoxAny]): LoxAny =
         // pprintln(s"call ${declaration.name.lexeme} with $arguments")
         val environment = Environment(Some(closure))
         for (i <- 0 until declaration.params.size) do
@@ -37,7 +38,6 @@ class LoxFunction(
             case r: Return =>
                 if isInitializer then closure.getAt(0, "this")
                 return r.value
-        null
 
     def bind(instance: LoxInstance): LoxFunction =
         val environment = Environment(Some(closure))
@@ -52,7 +52,7 @@ class LoxClass(
     val superclass: Option[LoxClass],
     val methods: Map[String, LoxFunction]
 ) extends LoxCallable:
-    def call(interpreter: Interpreter, arguments: List[Any]): Any =
+    def call(interpreter: Interpreter, arguments: List[LoxAny]): LoxAny =
         val instance = LoxInstance(this)
         val initializer = findMethod("init")
         initializer.map(_.bind(instance).call(interpreter, arguments))
@@ -70,9 +70,9 @@ class LoxClass(
         methods.get("init").map(_.arity).getOrElse(0)
 
 class LoxInstance(val klass: LoxClass):
-    private val fields = collection.mutable.Map[String, Any]()
+    private val fields = collection.mutable.Map[String, LoxAny]()
 
-    def get(name: Token): Any =
+    def get(name: Token): LoxAny =
         fields.get(name.lexeme) match
             case Some(value) => value
             case None =>
@@ -84,12 +84,12 @@ class LoxInstance(val klass: LoxClass):
                             s"Undefined property '${name.lexeme}'."
                         )
 
-    def set(name: Token, value: Any): Unit =
+    def set(name: Token, value: LoxAny): Unit =
         fields.update(name.lexeme, value)
 
     override def toString: String = s"<instance ${klass.name}>"
 
-class Return(val value: Any) extends RuntimeException:
+class Return(val value: LoxAny) extends RuntimeException:
     // override def fillInStackTrace(): Throwable = this
     override def getMessage: String = value.toString
     override def toString: String = s"Return($value)"

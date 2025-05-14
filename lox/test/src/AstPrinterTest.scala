@@ -9,5 +9,5 @@ class AstPrinterTest extends munit.FunSuite:
         )
 
         val output = AstPrinter.print(result)
-        assertEquals(output, "(* (- 123) (45.67))")
+        assertEquals(output, "(* (- 123.0) (45.67))")
     }

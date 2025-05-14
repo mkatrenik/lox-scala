@@ -96,7 +96,6 @@ final class Scanner(val source: String):
         c
 
     private def addToken(tokenType: TokenType, literal: Option[Token.Literal] = None): Unit =
-        println(s"adding token: $tokenType, $literal")
         tokens += Token(tokenType, source.substring(start, current), literal, line)
 
     private def `match`(expected: Char): Boolean =

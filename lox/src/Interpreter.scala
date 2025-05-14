@@ -1,18 +1,17 @@
 package lox
 
 import scala.util.Try
-import java.util.UUID
 // import pprint.pprintln
 
-final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
+final class Interpreter extends ExprVisitor[LoxAny], StmtVisitor[Unit]:
     val globals = Environment()
     private var environment = globals
-    val locals = collection.mutable.Map[UUID, Int]()
+    val locals = collection.mutable.Map[Expr.UniqueId, Int]()
 
     globals.define(
         "clock",
         new LoxCallable:
-            def call(interpreter: Interpreter, arguments: List[Any]): Any =
+            def call(interpreter: Interpreter, arguments: List[LoxAny]): LoxAny =
                 System.currentTimeMillis() / 1000.0
             def arity: Int = 0
             override def toString: String = "<native fn>"
@@ -26,7 +25,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
         //     e
         // }
 
-    def evaluate(expr: Expr): Any = expr.accept(this)
+    def evaluate(expr: Expr): LoxAny = expr.accept(this)
     def execute(stmt: Stmt): Unit = stmt.accept(this)
 
     def resolve(expr: Expr, depth: Int): Unit =
@@ -47,9 +46,9 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
         val value = evaluate(stmt.expression)
         println(stringify(value))
 
-    def visitLiteralExpr(expr: Expr.Literal): Any = expr.value.asInstanceOf[Any]
-    def visitGroupingExpr(expr: Expr.Grouping): Any = evaluate(expr.expression)
-    def visitUnaryExpr(expr: Expr.Unary): Any =
+    def visitLiteralExpr(expr: Expr.Literal): LoxAny = expr.value.asInstanceOf[LoxAny]
+    def visitGroupingExpr(expr: Expr.Grouping): LoxAny = evaluate(expr.expression)
+    def visitUnaryExpr(expr: Expr.Unary): LoxAny =
         val right = evaluate(expr.right)
         (expr.operator.tokenType, right) match
             case (TokenType.Minus, right: Double) => -right
@@ -60,7 +59,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
                     s"Invalid unary operator: ${expr.operator.lexeme} for ${right.getClass.getSimpleName}"
                 )
 
-    def visitBinaryExpr(expr: Expr.Binary): Any =
+    def visitBinaryExpr(expr: Expr.Binary): LoxAny =
         val right = evaluate(expr.right)
         val left = evaluate(expr.left)
 
@@ -115,7 +114,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
             case _ =>
                 runtimeError(expr.operator, "Invalid binary operator: " + expr.operator.lexeme)
 
-    def visitAssignExpr(expr: Expr.Assign): Any =
+    def visitAssignExpr(expr: Expr.Assign): LoxAny =
         val value = evaluate(expr.value)
         locals.get(expr.uniqueId) match
             case Some(distance) =>
@@ -124,16 +123,16 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
                 globals.assign(expr.name, value)
         value
 
-    def visitVariableExpr(expr: Expr.Variable): Any =
+    def visitVariableExpr(expr: Expr.Variable): LoxAny =
         lookupVariable(expr.name, expr)
 
-    def lookupVariable(name: Token, expr: Expr): Any =
+    def lookupVariable(name: Token, expr: Expr): LoxAny =
         locals.get(expr.uniqueId) match
             case Some(distance) =>
                 environment.getAt(distance, name.lexeme)
             case None => globals.get(name)
 
-    def visitCallExpr(expr: Expr.Call): Any =
+    def visitCallExpr(expr: Expr.Call): LoxAny =
         val callee = evaluate(expr.callee)
         val arguments = expr.arguments.map(evaluate)
         callee match
@@ -147,7 +146,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
             case _ =>
                 runtimeError(expr.paren, "Can only call functions and classes.")
 
-    def visitLogicalExpr(expr: Expr.Logical): Any =
+    def visitLogicalExpr(expr: Expr.Logical): LoxAny =
         val left = evaluate(expr.left)
         expr.operator.tokenType match
             case TokenType.Or =>
@@ -158,7 +157,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
                 else left
             case _ => throw new RuntimeError(expr.operator, "Invalid logical operator.")
 
-    def visitSetExpr(expr: Expr.Set): Any =
+    def visitSetExpr(expr: Expr.Set): LoxAny =
         val objectExpr = evaluate(expr.objectExpr)
         objectExpr match
             case instance: LoxInstance =>
@@ -168,7 +167,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
             case _ =>
                 runtimeError(expr.name, "Only instances have properties.")
 
-    def visitGetExpr(expr: Expr.Get): Any =
+    def visitGetExpr(expr: Expr.Get): LoxAny =
         val objectExpr = evaluate(expr.objectExpr)
         objectExpr match
             case instance: LoxInstance =>
@@ -176,10 +175,10 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
             case _ =>
                 runtimeError(expr.name, "Only instances have properties.")
 
-    def visitThisExpr(expr: Expr.This): Any =
+    def visitThisExpr(expr: Expr.This): LoxAny =
         lookupVariable(expr.keyword, expr)
 
-    def visitSuperExpr(expr: Expr.Super): Any =
+    def visitSuperExpr(expr: Expr.Super): LoxAny =
         val method = locals
             .get(expr.uniqueId)
             .flatMap: distance =>
@@ -202,9 +201,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
         while isTruthy(evaluate(stmt.condition)) do execute(stmt.body)
 
     def visitVarStmt(stmt: Stmt.Var): Unit =
-        val evaluatedValue = stmt.initializer match
-            case None        => null
-            case Some(value) => evaluate(value)
+        val evaluatedValue = stmt.initializer.map(evaluate(_)).getOrElse(Nil)
         environment.define(stmt.name.lexeme, evaluatedValue)
 
     def visitBlockStmt(expr: Stmt.Block): Unit =
@@ -217,7 +214,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
             statements.foreach: s =>
                 execute(s)
         // make sure to ignore throwed Return's
-        catch case e: RuntimeError => print(s"Error in block: ${e.getMessage}")
+        catch case e: RuntimeError => println(s"Error in block: ${e.getMessage}")
         finally this.environment = previous
 
     def visitIfStmt(expr: Stmt.If): Unit =
@@ -232,9 +229,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
         environment.define(stmt.name.lexeme, function)
 
     def visitReturnStmt(stmt: Stmt.Return): Unit =
-        val value = stmt.value match
-            case Some(value) => evaluate(value)
-            case None        => null
+        val value: LoxAny = stmt.value.map(evaluate).getOrElse(Nil)
         throw Return(value)
 
     def visitClassStmt(stmt: Stmt.Class): Unit =
@@ -247,7 +242,7 @@ final class Interpreter extends ExprVisitor[Any], StmtVisitor[Unit]:
                 )
             superclassValue.asInstanceOf[LoxClass]
 
-        environment.define(stmt.name.lexeme, null)
+        environment.define(stmt.name.lexeme, Nil)
 
         superclass.foreach: superclass =>
             environment = Environment(Some(environment))

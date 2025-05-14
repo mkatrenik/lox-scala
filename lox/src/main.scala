@@ -4,7 +4,7 @@ import scala.util.Try
 
 def stringify(value: Any): String =
     value match
-        case null      => "nil"
+        case Nil       => "nil"
         case v: Double => v.toString
         case _         => value.toString
 
